@@ -1,0 +1,467 @@
+C51 COMPILER V6.14  PTK_MISC_MESSAGEDIGEST                                                 11/30/2005 15:03:04 PAGE 1   
+
+
+C51 COMPILER V6.14, COMPILATION OF MODULE PTK_MISC_MESSAGEDIGEST
+OBJECT MODULE PLACED IN .\OUT\ptk_misc_MessageDigest.obj
+COMPILER INVOKED BY: c:\Keil\C51\BIN\C51.EXE .\ptk_misc_MessageDigest.c COMPACT BROWSE DEBUG OBJECTEXTEND CODE LISTINCLU
+                    -DE SYMBOLS PRINT(.\LST\ptk_misc_MessageDigest.lst) OBJECT(.\OUT\ptk_misc_MessageDigest.obj) 
+
+stmt level    source
+
+   1          //#include "com.h"
+   2          
+   3          //#pragma warning(disable : 4786)
+   4          #ifndef PTK_MISC_MESSAGE_DIGEST_H_
+   5          #define PTK_MISC_MESSAGE_DIGEST_H_
+   6          
+   7          //#pragma warning(disable : 4786)
+   8          
+   9          //#include "..\utility\ptk_utility.h"
+  10          //#include "..\FileSystem\ptk_fs_FileSystem.h"
+  11          //using namespace ptk::fs;
+  12          
+  13          //BEGIN_NAMESPACE(ptk)
+  14          
+  15          /*typedef struct MD5CheckSum
+  16          {
+  17          	unsigned long state[4];
+  18          }MD5CheckSum;
+  19          
+  20          */
+  21          
+  22          
+  23          
+  24          #define byte_t	unsigned char
+  25          extern  MD5CheckSum* md5CheckSum; 
+*** ERROR C129 IN LINE 25 OF .\PTK_MISC_MESSAGEDIGEST.C: missing ';' before '*'
+  26          
+  27          void MD5(MD5CheckSum* md5CheckSum, const void* pBuffer, unsigned int bufferSize);
+  28          //void MD5(MD5CheckSum& md5CheckSum, IFile* pFile, dword_t blockSize = 4096);
+  29          
+  30          //END_NAMESPACE
+  31          
+  32          #endif//PTK_MISC_MESSAGE_DIGEST_H_
+  33          #include <string.h>
+   1      =1  /*--------------------------------------------------------------------------
+   2      =1  STRING.H
+   3      =1  
+   4      =1  String functions.
+   5      =1  Copyright (c) 1988-2001 Keil Elektronik GmbH and Keil Software, Inc.
+   6      =1  All rights reserved.
+   7      =1  --------------------------------------------------------------------------*/
+   8      =1  
+   9      =1  #ifndef _SIZE_T
+  10      =1   #define _SIZE_T
+  11      =1   typedef unsigned int size_t;
+  12      =1  #endif
+  13      =1  
+  14      =1  #ifndef NULL
+  15      =1   #define NULL ((void *) 0L)
+  16      =1  #endif
+  17      =1  
+  18      =1  #pragma SAVE
+  19      =1  #pragma REGPARMS
+  20      =1  extern char *strcat (char *s1, char *s2);
+C51 COMPILER V6.14  PTK_MISC_MESSAGEDIGEST                                                 11/30/2005 15:03:04 PAGE 2   
+
+  21      =1  extern char *strncat (char *s1, char *s2, int n);
+  22      =1  
+  23      =1  extern char strcmp (char *s1, char *s2);
+  24      =1  extern char strncmp (char *s1, char *s2, int n);
+  25      =1  
+  26      =1  extern char *strcpy (char *s1, char *s2);
+  27      =1  extern char *strncpy (char *s1, char *s2, int n);
+  28      =1  
+  29      =1  extern int strlen (char *);
+  30      =1  
+  31      =1  extern char *strchr (const char *s, char c);
+  32      =1  extern int strpos (const char *s, char c);
+  33      =1  extern char *strrchr (const char *s, char c);
+  34      =1  extern int strrpos (const char *s, char c);
+  35      =1  
+  36      =1  extern int strspn (char *s, char *set);
+  37      =1  extern int strcspn (char *s, char *set);
+  38      =1  extern char *strpbrk (char *s, char *set);
+  39      =1  extern char *strrpbrk (char *s, char *set);
+  40      =1  extern char *strstr  (char *s, char *sub);
+  41      =1  
+  42      =1  extern char memcmp (void *s1, void *s2, int n);
+  43      =1  extern void *memcpy (void *s1, void *s2, int n);
+  44      =1  extern void *memchr (void *s, char val, int n);
+  45      =1  extern void *memccpy (void *s1, void *s2, char val, int n);
+  46      =1  extern void *memmove (void *s1, void *s2, int n);
+  47      =1  extern void *memset  (void *s, char val, int n);
+  48      =1  #pragma RESTORE
+  34          #include "ptk_misc_MessageDigest.h"
+   1      =1  #ifndef PTK_MISC_MESSAGE_DIGEST_H_
+           =1 #define PTK_MISC_MESSAGE_DIGEST_H_
+           =1 
+           =1 //#pragma warning(disable : 4786)
+           =1 
+           =1 //#include "..\utility\ptk_utility.h"
+           =1 //#include "..\FileSystem\ptk_fs_FileSystem.h"
+           =1 //using namespace ptk::fs;
+           =1 
+           =1 //BEGIN_NAMESPACE(ptk)
+           =1 /*
+           =1 typedef struct MD5CheckSum
+           =1 {
+           =1 	unsigned long int state[4];
+           =1 }MD5CheckSum;*/
+           =1 
+           =1 //extern struct MD5CheckSum* md5CheckSum;
+           =1 
+           =1 void MD5(MD5CheckSum* md5CheckSum, const void* pBuffer, unsigned int bufferSize);
+           =1 
+           =1 //END_NAMESPACE
+           =1 
+           =1 #endif//PTK_MISC_MESSAGE_DIGEST_H_
+  35          
+  36          
+  37          
+  38          //BEGIN_NAMESPACE(ptk)
+  39          unsigned long code MD5_T01 = 0xd76aa478;
+  40          unsigned long code MD5_T02 = 0xe8c7b756;
+  41          unsigned long code MD5_T03 = 0x242070db;
+  42          unsigned long code MD5_T04 = 0xc1bdceee;
+  43          unsigned long code MD5_T05 = 0xf57c0faf;
+  44          unsigned long code MD5_T06 = 0x4787c62a;
+C51 COMPILER V6.14  PTK_MISC_MESSAGEDIGEST                                                 11/30/2005 15:03:04 PAGE 3   
+
+  45          unsigned long code MD5_T07 = 0xa8304613;
+  46          unsigned long code MD5_T08 = 0xfd469501;
+  47          unsigned long code MD5_T09 = 0x698098d8;
+  48          unsigned long code MD5_T10 = 0x8b44f7af;
+  49          unsigned long code MD5_T11 = 0xffff5bb1;
+  50          unsigned long code MD5_T12 = 0x895cd7be;
+  51          unsigned long code MD5_T13 = 0x6b901122;
+  52          unsigned long code MD5_T14 = 0xfd987193;
+  53          unsigned long code MD5_T15 = 0xa679438e;
+  54          unsigned long code MD5_T16 = 0x49b40821;
+  55          
+  56          unsigned long code MD5_T17 = 0xf61e2562;
+  57          unsigned long code MD5_T18 = 0xc040b340;
+  58          unsigned long code MD5_T19 = 0x265e5a51;
+  59          unsigned long code MD5_T20 = 0xe9b6c7aa;
+  60          unsigned long code MD5_T21 = 0xd62f105d;
+  61          unsigned long code MD5_T22 = 0x02441453;
+  62          unsigned long code MD5_T23 = 0xd8a1e681;
+  63          unsigned long code MD5_T24 = 0xe7d3fbc8;
+  64          unsigned long code MD5_T25 = 0x21e1cde6;
+  65          unsigned long code MD5_T26 = 0xc33707d6;
+  66          unsigned long code MD5_T27 = 0xf4d50d87;
+  67          unsigned long code MD5_T28 = 0x455a14ed;
+  68          unsigned long code MD5_T29 = 0xa9e3e905;
+  69          unsigned long code MD5_T30 = 0xfcefa3f8;
+  70          unsigned long code MD5_T31 = 0x676f02d9;
+  71          unsigned long code MD5_T32 = 0x8d2a4c8a;
+  72          
+  73          unsigned long code MD5_T33 = 0xfffa3942;
+  74          unsigned long code MD5_T34 = 0x8771f681;
+  75          unsigned long code MD5_T35 = 0x6d9d6122;
+  76          unsigned long code MD5_T36 = 0xfde5380c;
+  77          unsigned long code MD5_T37 = 0xa4beea44;
+  78          unsigned long code MD5_T38 = 0x4bdecfa9;
+  79          unsigned long code MD5_T39 = 0xf6bb4b60;
+  80          unsigned long code MD5_T40 = 0xbebfbc70;
+  81          unsigned long code MD5_T41 = 0x289b7ec6;
+  82          unsigned long code MD5_T42 = 0xeaa127fa;
+  83          unsigned long code MD5_T43 = 0xd4ef3085;
+  84          unsigned long code MD5_T44 = 0x04881d05;
+  85          unsigned long code MD5_T45 = 0xd9d4d039;
+  86          unsigned long code MD5_T46 = 0xe6db99e5;
+  87          unsigned long code MD5_T47 = 0x1fa27cf8;
+  88          unsigned long code MD5_T48 = 0xc4ac5665;
+  89          
+  90          unsigned long code MD5_T49 = 0xf4292244;
+  91          unsigned long code MD5_T50 = 0x432aff97;
+  92          unsigned long code MD5_T51 = 0xab9423a7;
+  93          unsigned long code MD5_T52 = 0xfc93a039;
+  94          unsigned long code MD5_T53 = 0x655b59c3;
+  95          unsigned long code MD5_T54 = 0x8f0ccc92;
+  96          unsigned long code MD5_T55 = 0xffeff47d;
+  97          unsigned long code MD5_T56 = 0x85845dd1;
+  98          unsigned long code MD5_T57 = 0x6fa87e4f;
+  99          unsigned long code MD5_T58 = 0xfe2ce6e0;
+ 100          unsigned long code MD5_T59 = 0xa3014314;
+ 101          unsigned long code MD5_T60 = 0x4e0811a1;
+ 102          unsigned long code MD5_T61 = 0xf7537e82;
+ 103          unsigned long code MD5_T62 = 0xbd3af235;
+ 104          unsigned long code MD5_T63 = 0x2ad7d2bb;
+ 105          unsigned long code MD5_T64 = 0xeb86d391;
+ 106          
+C51 COMPILER V6.14  PTK_MISC_MESSAGEDIGEST                                                 11/30/2005 15:03:04 PAGE 4   
+
+ 107          /*
+ 108          #define MD5_T01  0xd76aa478
+ 109          #define MD5_T02  0xe8c7b756
+ 110          #define MD5_T03  0x242070db
+ 111          #define MD5_T04  0xc1bdceee
+ 112          #define MD5_T05  0xf57c0faf
+ 113          #define MD5_T06  0x4787c62a
+ 114          #define MD5_T07  0xa8304613
+ 115          #define MD5_T08  0xfd469501
+ 116          #define MD5_T09  0x698098d8
+ 117          #define MD5_T10  0x8b44f7af
+ 118          #define MD5_T11  0xffff5bb1
+ 119          #define MD5_T12  0x895cd7be
+ 120          #define MD5_T13  0x6b901122
+ 121          #define MD5_T14  0xfd987193
+ 122          #define MD5_T15  0xa679438e
+ 123          #define MD5_T16  0x49b40821
+ 124          #define MD5_T17  0xf61e2562
+ 125          #define MD5_T18  0xc040b340
+ 126          #define MD5_T19  0x265e5a51
+ 127          #define MD5_T20  0xe9b6c7aa
+ 128          #define MD5_T21  0xd62f105d
+ 129          #define MD5_T22  0x02441453
+ 130          #define MD5_T23  0xd8a1e681
+ 131          #define MD5_T24  0xe7d3fbc8
+ 132          #define MD5_T25  0x21e1cde6
+ 133          #define MD5_T26  0xc33707d6
+ 134          #define MD5_T27  0xf4d50d87
+ 135          #define MD5_T28  0x455a14ed
+ 136          #define MD5_T29  0xa9e3e905
+ 137          #define MD5_T30  0xfcefa3f8
+ 138          #define MD5_T31  0x676f02d9
+ 139          #define MD5_T32  0x8d2a4c8a
+ 140          #define MD5_T33  0xfffa3942
+ 141          #define MD5_T34  0x8771f681
+ 142          #define MD5_T35  0x6d9d6122
+ 143          #define MD5_T36  0xfde5380c
+ 144          #define MD5_T37  0xa4beea44
+ 145          #define MD5_T38  0x4bdecfa9
+ 146          #define MD5_T39  0xf6bb4b60
+ 147          #define MD5_T40  0xbebfbc70
+ 148          #define MD5_T41  0x289b7ec6
+ 149          #define MD5_T42  0xeaa127fa
+ 150          #define MD5_T43  0xd4ef3085
+ 151          #define MD5_T44  0x04881d05
+ 152          #define MD5_T45  0xd9d4d039
+ 153          #define MD5_T46  0xe6db99e5
+ 154          #define MD5_T47  0x1fa27cf8
+ 155          #define MD5_T48  0xc4ac5665
+ 156          #define MD5_T49  0xf4292244
+ 157          #define MD5_T50  0x432aff97
+ 158          #define MD5_T51  0xab9423a7
+ 159          #define MD5_T52  0xfc93a039
+ 160          #define MD5_T53  0x655b59c3
+ 161          #define MD5_T54  0x8f0ccc92
+ 162          #define MD5_T55  0xffeff47d
+ 163          #define MD5_T56  0x85845dd1
+ 164          #define MD5_T57  0x6fa87e4f
+ 165          #define MD5_T58  0xfe2ce6e0
+ 166          #define MD5_T59  0xa3014314
+ 167          #define MD5_T60  0x4e0811a1
+ 168          #define MD5_T61  0xf7537e82
+C51 COMPILER V6.14  PTK_MISC_MESSAGEDIGEST                                                 11/30/2005 15:03:04 PAGE 5   
+
+ 169          #define MD5_T62  0xbd3af235
+ 170          #define MD5_T63  0x2ad7d2bb
+ 171          #define MD5_T64  0xeb86d391
+ 172          */
+ 173          
+ 174           void MD5_Init(MD5CheckSum* md5CheckSum)
+ 175          {
+ 176          	(*md5CheckSum).state[0] = 0x67452301;
+ 177          	
+ 178          	(*md5CheckSum).state[1] = 0xefcdab89;
+ 179          	
+ 180          	(*md5CheckSum).state[2] = 0x98badcfe;
+ 181          	
+ 182          	(*md5CheckSum).state[3] = 0x10325476;
+ 183          
+ 184          
+ 185          }
+ 186          
+ 187           unsigned  long MD5_F(unsigned  long b, unsigned  long c, unsigned  long d)
+ 188          {
+ 189          	return ((b & c) | (~b & d));
+ 190          }
+ 191          
+ 192           unsigned  long MD5_G(unsigned  long b, unsigned  long c, unsigned  long d)
+ 193          {
+ 194          	return ((b & d) | (c & ~d));
+ 195          }
+ 196          
+ 197          unsigned  long MD5_H(unsigned  long b, unsigned  long c, unsigned  long d)
+ 198          {
+ 199          	return (b ^ c ^ d);
+ 200          }
+ 201          
+ 202           unsigned  long MD5_I(unsigned  long b, unsigned  long c, unsigned  long d)
+ 203          {
+ 204          	return (c ^ (b | ~d));
+ 205          }
+ 206          
+ 207           unsigned  long MD5_CYCLIC(unsigned  long w, unsigned  long s)
+ 208          {
+ 209          	return (w << s) | (w >> (32 - s));
+ 210          }
+ 211          
+ 212           void MD5_FF(unsigned  long* a, unsigned  long b, unsigned  long c, unsigned  long d, unsigned  long k, un
+             -signed  long s, unsigned  long t)
+ 213          {
+ 214          	(*a) = b + MD5_CYCLIC(((*a) + MD5_F(b, c, d) + k + t), s);
+ 215          }
+ 216          
+ 217           void MD5_GG(unsigned  long* a, unsigned  long b, unsigned  long c, unsigned  long d, unsigned  long k, un
+             -signed  long s, unsigned  long t)
+ 218          {
+ 219          	(*a) = b + MD5_CYCLIC(((*a) + MD5_G(b, c, d) + k + t), s);
+ 220          }
+ 221          
+ 222           void MD5_HH(unsigned  long* a, unsigned  long b, unsigned  long c, unsigned  long d, unsigned  long k, un
+             -signed  long s, unsigned  long t)
+ 223          {
+ 224          	(*a) = b + MD5_CYCLIC(((*a) + MD5_H(b, c, d) + k + t), s);
+ 225          }
+ 226          
+ 227           void MD5_II(unsigned  long *a, unsigned  long b, unsigned  long c, unsigned  long d, unsigned  long k, un
+C51 COMPILER V6.14  PTK_MISC_MESSAGEDIGEST                                                 11/30/2005 15:03:04 PAGE 6   
+
+             -signed  long s, unsigned  long t)
+ 228          {
+ 229          	(*a) = b + MD5_CYCLIC(((*a) + MD5_I(b, c, d) + k + t), s);
+ 230          }
+ 231          
+ 232           void MD5_Packet(MD5CheckSum* md5CheckSum, const unsigned  long* pPacket)
+ 233          {
+ 234           	unsigned  long a =(*md5CheckSum).state[0];
+ 235          	unsigned  long b =(*md5CheckSum).state[1];
+ 236          	unsigned  long c =(*md5CheckSum).state[2];
+ 237          	unsigned  long d =(*md5CheckSum).state[3];
+ 238          	
+ 239          	MD5_FF(&a, b, c, d, pPacket[0],   7, MD5_T01);
+ 240          	MD5_FF(&d, a, b, c, pPacket[1],  12, MD5_T02);
+ 241          	MD5_FF(&c, d, a, b, pPacket[2],  17, MD5_T03);
+ 242          	MD5_FF(&b, c, d, a, pPacket[3],  22, MD5_T04);
+ 243          	MD5_FF(&a, b, c, d, pPacket[4],   7, MD5_T05);
+ 244          	MD5_FF(&d, a, b, c, pPacket[5],  12, MD5_T06);
+ 245          	MD5_FF(&c, d, a, b, pPacket[6],  17, MD5_T07);
+ 246          	MD5_FF(&b, c, d, a, pPacket[7],  22, MD5_T08);
+ 247          	MD5_FF(&a, b, c, d, pPacket[8],   7, MD5_T09);
+ 248          	MD5_FF(&d, a, b, c, pPacket[9],  12, MD5_T10);
+ 249          	MD5_FF(&c, d, a, b, pPacket[10], 17, MD5_T11);
+ 250          	MD5_FF(&b, c, d, a, pPacket[11], 22, MD5_T12);
+ 251          	MD5_FF(&a, b, c, d, pPacket[12],  7, MD5_T13);
+ 252          	MD5_FF(&d, a, b, c, pPacket[13], 12, MD5_T14);
+ 253          	MD5_FF(&c, d, a, b, pPacket[14], 17, MD5_T15);
+ 254          	MD5_FF(&b, c, d, a, pPacket[15], 22, MD5_T16);
+ 255          	
+ 256          	MD5_GG(&a, b, c, d, pPacket[1],   5, MD5_T17);
+ 257          	MD5_GG(&d, a, b, c, pPacket[6],   9, MD5_T18);
+ 258          	MD5_GG(&c, d, a, b, pPacket[11], 14, MD5_T19);
+ 259          	MD5_GG(&b, c, d, a, pPacket[0],  20, MD5_T20);
+ 260          	MD5_GG(&a, b, c, d, pPacket[5],   5, MD5_T21);
+ 261          	MD5_GG(&d, a, b, c, pPacket[10],  9, MD5_T22);
+ 262          	MD5_GG(&c, d, a, b, pPacket[15], 14, MD5_T23);
+ 263          	MD5_GG(&b, c, d, a, pPacket[4],  20, MD5_T24);
+ 264          	MD5_GG(&a, b, c, d, pPacket[9],   5, MD5_T25);
+ 265          	MD5_GG(&d, a, b, c, pPacket[14],  9, MD5_T26);
+ 266          	MD5_GG(&c, d, a, b, pPacket[3],  14, MD5_T27);
+ 267          	MD5_GG(&b, c, d, a, pPacket[8],  20, MD5_T28);
+ 268          	MD5_GG(&a, b, c, d, pPacket[13],  5, MD5_T29);
+ 269          	MD5_GG(&d, a, b, c, pPacket[2],   9, MD5_T30);
+ 270          	MD5_GG(&c, d, a, b, pPacket[7],  14, MD5_T31);
+ 271          	MD5_GG(&b, c, d, a, pPacket[12], 20, MD5_T32);
+ 272          	
+ 273          	MD5_HH(&a, b, c, d, pPacket[5],   4, MD5_T33);
+ 274          	MD5_HH(&d, a, b, c, pPacket[8],  11, MD5_T34);
+ 275          	MD5_HH(&c, d, a, b, pPacket[11], 16, MD5_T35);
+ 276          	MD5_HH(&b, c, d, a, pPacket[14], 23, MD5_T36);
+ 277          	MD5_HH(&a, b, c, d, pPacket[1],   4, MD5_T37);
+ 278          	MD5_HH(&d, a, b, c, pPacket[4],  11, MD5_T38);
+ 279          	MD5_HH(&c, d, a, b, pPacket[7],  16, MD5_T39);
+ 280          	MD5_HH(&b, c, d, a, pPacket[10], 23, MD5_T40);
+ 281          	MD5_HH(&a, b, c, d, pPacket[13],  4, MD5_T41);
+ 282          	MD5_HH(&d, a, b, c, pPacket[0],  11, MD5_T42);
+ 283          	MD5_HH(&c, d, a, b, pPacket[3],  16, MD5_T43);
+ 284          	MD5_HH(&b, c, d, a, pPacket[6],  23, MD5_T44);
+ 285          	MD5_HH(&a, b, c, d, pPacket[9],   4, MD5_T45);
+ 286          	MD5_HH(&d, a, b, c, pPacket[12], 11, MD5_T46);
+ 287          	MD5_HH(&c, d, a, b, pPacket[15], 16, MD5_T47);
+ 288          	MD5_HH(&b, c, d, a, pPacket[2],  23, MD5_T48);
+C51 COMPILER V6.14  PTK_MISC_MESSAGEDIGEST                                                 11/30/2005 15:03:04 PAGE 7   
+
+ 289          	
+ 290          	MD5_II(&a, b, c, d, pPacket[0],   6, MD5_T49);
+ 291          	MD5_II(&d, a, b, c, pPacket[7],  10, MD5_T50);
+ 292          	MD5_II(&c, d, a, b, pPacket[14], 15, MD5_T51);
+ 293          	MD5_II(&b, c, d, a, pPacket[5],  21, MD5_T52);
+ 294          	MD5_II(&a, b, c, d, pPacket[12],  6, MD5_T53);
+ 295          	MD5_II(&d, a, b, c, pPacket[3],  10, MD5_T54);
+ 296          	MD5_II(&c, d, a, b, pPacket[10], 15, MD5_T55);
+ 297          	MD5_II(&b, c, d, a, pPacket[1],  21, MD5_T56);
+ 298          	MD5_II(&a, b, c, d, pPacket[8],   6, MD5_T57);
+ 299          	MD5_II(&d, a, b, c, pPacket[15], 10, MD5_T58);
+ 300          	MD5_II(&c, d, a, b, pPacket[6],  15, MD5_T59);
+ 301          	MD5_II(&b, c, d, a, pPacket[13], 21, MD5_T60);
+ 302          	MD5_II(&a, b, c, d, pPacket[4],   6, MD5_T61);
+ 303          	MD5_II(&d, a, b, c, pPacket[11], 10, MD5_T62);
+ 304          	MD5_II(&c, d, a, b, pPacket[2],  15, MD5_T63);
+ 305          	MD5_II(&b, c, d, a, pPacket[9],  21, MD5_T64);
+ 306          	
+ 307          	
+ 308          	(*md5CheckSum).state[0] += a;
+ 309          	(*md5CheckSum).state[1] += b;
+ 310          	(*md5CheckSum).state[2] += c;
+ 311          	(*md5CheckSum).state[3] += d;
+ 312          }
+ 313          
+ 314          void MD5_Block(MD5CheckSum* md5CheckSum, const void* pBuffer, size_t bufferSize)
+ 315          {
+ 316          	unsigned  char* pSrc = (byte_t*)pBuffer;
+ 317          	unsigned  char packet[64];
+ 318          	unsigned  long count = bufferSize/64;
+ 319          	size_t	i;
+ 320          	for(i = 0; i < count; ++i)
+ 321          	{
+ 322          		memcpy(packet, pSrc, 64);
+ 323          		MD5_Packet(md5CheckSum, (unsigned  long*)packet);
+ 324          		pSrc += 64;
+ 325          	}
+ 326          }
+ 327          
+ 328          void MD5_RemainderBlock(MD5CheckSum* md5CheckSum, 
+ 329          						const void* pBuffer, 
+ 330          						unsigned  long bufferSize)
+ 331          {
+ 332          	byte_t packet[64];
+ 333          	size_t remainder = bufferSize % 64;	
+ 334          	byte_t* pSrc = (byte_t*)pBuffer + bufferSize - remainder;
+ 335          
+ 336          	if(remainder < 56)
+ 337          	{
+ 338          		memcpy(packet, pSrc, remainder);
+ 339          		packet[remainder] = 0x80;
+ 340          		memset(&packet[remainder+1], 0, 56 - remainder - 1);
+ 341          	    *((unsigned long int*)&packet[60]) = bufferSize >> 29;
+ 342          		*((unsigned long int*)&packet[56]) = bufferSize << 3;//packet[56]=buffersize*8
+ 343          		MD5_Packet(md5CheckSum, (unsigned  long*)packet);
+ 344          	}
+ 345          	else
+ 346          	{
+ 347          		memcpy(packet, pSrc, remainder);
+ 348          		packet[remainder] = 0x80;
+ 349          		memset(&packet[remainder+1], 0, 64 - remainder - 1);
+ 350          		MD5_Packet(md5CheckSum, (unsigned  long*)packet);
+C51 COMPILER V6.14  PTK_MISC_MESSAGEDIGEST                                                 11/30/2005 15:03:04 PAGE 8   
+
+ 351          		memset(packet, 0, 56);
+ 352          		*((unsigned long int*)&packet[60]) = bufferSize >> 29;
+ 353          		*((unsigned long int*)&packet[56]) = bufferSize << 3;//packet[56]=buffersize*8
+ 354          		MD5_Packet(md5CheckSum, (unsigned  long*)packet);
+ 355          	}
+ 356          }
+ 357          
+ 358          
+ 359          void MD5(MD5CheckSum* md5CheckSum, const void* pBuffer, unsigned  int bufferSize)
+ 360          {
+ 361          	MD5_Init(md5CheckSum);
+ 362          	MD5_Block(md5CheckSum, pBuffer, bufferSize);
+ 363          	MD5_RemainderBlock(md5CheckSum, pBuffer, bufferSize);
+ 364          }
+ 365          
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  1 ERROR(S)

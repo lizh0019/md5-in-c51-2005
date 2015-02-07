@@ -1,0 +1,443 @@
+A51 MACRO ASSEMBLER  SPAREUSB                                                             12/02/2003 15:00:30 PAGE     1
+
+
+MACRO ASSEMBLER A51 V6.12
+OBJECT MODULE PLACED IN .\OUT\SpareUsb.obj
+ASSEMBLER INVOKED BY: D:\KEIL C51\C51\BIN\A51.EXE .\SpareUsb.A51 SET(SMALL) DEBUG PRINT(.\LST\SpareUsb.lst) OBJECT(.\OUT
+                      \SpareUsb.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     NAME spare_to_usb
+                       2     
+                       3     PUBLIC SpareUsb
+                       4     
+                       5     PUBLIC sendover
+                       6     PUBLIC spare_ce
+                       7     PUBLIC spare_ad1
+                       8     PUBLIC spare_ad2
+                       9     PUBLIC spare_ad3
+                      10     
+                      11     data_seg1   SEGMENT DATA
+----                  12                             RSEG data_seg1
+0000                  13     sendover:   DS 1
+0001                  14     spare_ce:   DS 1
+0002                  15     spare_ad1:  DS 1
+0003                  16     spare_ad2:  DS 1
+0004                  17     spare_ad3:  DS 1
+0005                  18     iLoop:      DS 1
+0006                  19     iCount0:    DS 1
+0007                  20     iCount1:    DS 1
+                      21     
+                      22     code_seg    SEGMENT CODE
+----                  23                             RSEG code_seg
+0000 E500     F       24     SpareUsb:               mov  a, spare_ce
+0002 F500     F       25                             mov  iLoop, a
+0004 750001   F       26                             mov  spare_ce, #1
+0007 E500     F       27     label_01:               mov  a, iLoop
+0009 6009             28                             jz   label_02
+000B 1500     F       29                             dec  iLoop
+000D E500     F       30                             mov  a, spare_ce
+000F 23               31                             rl   a
+0010 F500     F       32                             mov  spare_ce, a
+0012 80F3             33                             sjmp label_01
+                      34     
+0014 C2AF             35     label_02:               clr  EA                                 ;disable interrupt
+0016 D2A5             36                             setb p2.5                               ;RE
+0018 C2A2             37                             clr  p2.2                               ;ALE
+001A C2A3             38                             clr  p2.3                               ;CLE
+001C C2A0             39                             clr  p2.0                               ;WP
+001E D2A1             40                             setb p2.1                               ;WE
+0020 E500     F       41                             mov  a, spare_ce
+0022 F4               42                             cpl  a
+0023 F590             43                             mov  p1, a
+0025 D2A3             44                             setb p2.3                               ;cle
+                      45     
+                      46     
+0027 758050           47                             mov  p0, #50h                           ;read command
+002A C2A1             48                             clr  p2.1                               ;WE
+002C D2A1             49                             setb p2.1
+002E C2A3             50                             clr  p2.3                               ;CLE
+0030 D2A2             51                             setb p2.2                               ;ALE
+0032 758000           52                             mov  p0, #0                             ;address A0-A7
+0035 C2A1             53                             clr  p2.1                               ;WE
+0037 D2A1             54                             setb p2.1
+0039 850080   F       55                             mov  p0, spare_ad1              ;address A9-A16
+003C C2A1             56                             clr  p2.1                               ;WE
+003E D2A1             57                             setb p2.1
+A51 MACRO ASSEMBLER  SPAREUSB                                                             12/02/2003 15:00:30 PAGE     2
+
+0040 850080   F       58                             mov  p0, spare_ad2              ;address A17-A24
+0043 C2A1             59                             clr  p2.1                               ;WE
+0045 D2A1             60                             setb p2.1
+0047 850080   F       61                             mov  p0, spare_ad3              ;address A25
+004A C2A1             62                             clr  p2.1                               ;WE
+004C D2A1             63                             setb p2.1
+004E C2A2             64                             clr  p2.2                               ;ALE
+0050 30A6FD           65     label_09:               jnb  p2.6, label_09
+0053 7580FF           66                             mov  p0, #0ffh
+0056 D2AF             67                             setb EA                                 ;enable interrupt
+0058 750008   F       68                             mov  iLoop, #8
+                      69     
+005B 750000   F       70     label_10:               mov  iCount0, #0
+005E 750000   F       71                             mov  iCount1, #0
+0061 E500     F       72     label_11:               mov  a, sendover
+0063 7007             73                             jnz  label_12
+0065 D500F9   F       74                             djnz iCount0, label_11
+0068 D500F6   F       75                             djnz iCount1, label_11
+006B 22               76                             ret                                     ;abnormal exit
+                      77     
+006C C2AF             78     label_12:               clr  EA                         ;disable interrupt
+006E 90FF03           79                             mov  dptr, #0ff03h              ;can be any odd value
+0071 7405             80                             mov  a, #5
+0073 F0               81                             movx @dptr, a                   ;select the endpoint
+0074 1582             82                             dec  dpl
+0076 E0               83                             movx a, @dptr                   ;get endpoint status
+0077 74F0             84                             mov  a, #0f0h
+0079 0582             85                             inc  dpl
+007B F0               86                             movx @dptr, a                   ;command code
+007C E4               87                             clr  a
+007D 1582             88                             dec  dpl
+007F F0               89                             movx @dptr, a                   ;should be 0
+0080 7440             90                             mov  a, #40h
+0082 F0               91                             movx @dptr, a                   ;tx buffer length
+0083 C2A5             92                             clr  p2.5                               ;64 sets of transfer instru
+                             ctions
+0085 E580             93                             mov  a, p0
+0087 D2A5             94                             setb p2.5
+0089 F0               95                             movx @dptr, a
+008A C2A5             96                             clr  p2.5
+008C E580             97                             mov  a, p0
+008E D2A5             98                             setb p2.5
+0090 F0               99                             movx @dptr, a
+0091 C2A5            100                             clr  p2.5
+0093 E580            101                             mov  a, p0
+0095 D2A5            102                             setb p2.5
+0097 F0              103                             movx @dptr, a
+0098 C2A5            104                             clr  p2.5
+009A E580            105                             mov  a, p0
+009C D2A5            106                             setb p2.5
+009E F0              107                             movx @dptr, a
+009F C2A5            108                             clr  p2.5
+00A1 E580            109                             mov  a, p0
+00A3 D2A5            110                             setb p2.5
+00A5 F0              111                             movx @dptr, a
+00A6 C2A5            112                             clr  p2.5
+00A8 E580            113                             mov  a, p0
+00AA D2A5            114                             setb p2.5
+00AC F0              115                             movx @dptr, a
+00AD C2A5            116                             clr  p2.5
+00AF E580            117                             mov  a, p0
+00B1 D2A5            118                             setb p2.5
+00B3 F0              119                             movx @dptr, a
+00B4 C2A5            120                             clr  p2.5
+00B6 E580            121                             mov  a, p0
+00B8 D2A5            122                             setb p2.5
+A51 MACRO ASSEMBLER  SPAREUSB                                                             12/02/2003 15:00:30 PAGE     3
+
+00BA F0              123                             movx @dptr, a                   ;08
+00BB C2A5            124                             clr  p2.5
+00BD E580            125                             mov  a, p0
+00BF D2A5            126                             setb p2.5
+00C1 F0              127                             movx @dptr, a
+00C2 C2A5            128                             clr  p2.5
+00C4 E580            129                             mov  a, p0
+00C6 D2A5            130                             setb p2.5
+00C8 F0              131                             movx @dptr, a
+00C9 C2A5            132                             clr  p2.5
+00CB E580            133                             mov  a, p0
+00CD D2A5            134                             setb p2.5
+00CF F0              135                             movx @dptr, a
+00D0 C2A5            136                             clr  p2.5
+00D2 E580            137                             mov  a, p0
+00D4 D2A5            138                             setb p2.5
+00D6 F0              139                             movx @dptr, a
+00D7 C2A5            140                             clr  p2.5
+00D9 E580            141                             mov  a, p0
+00DB D2A5            142                             setb p2.5
+00DD F0              143                             movx @dptr, a
+00DE C2A5            144                             clr  p2.5
+00E0 E580            145                             mov  a, p0
+00E2 D2A5            146                             setb p2.5
+00E4 F0              147                             movx @dptr, a
+00E5 C2A5            148                             clr  p2.5
+00E7 E580            149                             mov  a, p0
+00E9 D2A5            150                             setb p2.5
+00EB F0              151                             movx @dptr, a
+00EC C2A5            152                             clr  p2.5
+00EE E580            153                             mov  a, p0
+00F0 D2A5            154                             setb p2.5
+00F2 F0              155                             movx @dptr, a                   ;10
+00F3 C2A5            156                             clr  p2.5
+00F5 E580            157                             mov  a, p0
+00F7 D2A5            158                             setb p2.5
+00F9 F0              159                             movx @dptr, a
+00FA C2A5            160                             clr  p2.5
+00FC E580            161                             mov  a, p0
+00FE D2A5            162                             setb p2.5
+0100 F0              163                             movx @dptr, a
+0101 C2A5            164                             clr  p2.5
+0103 E580            165                             mov  a, p0
+0105 D2A5            166                             setb p2.5
+0107 F0              167                             movx @dptr, a
+0108 C2A5            168                             clr  p2.5
+010A E580            169                             mov  a, p0
+010C D2A5            170                             setb p2.5
+010E F0              171                             movx @dptr, a
+010F C2A5            172                             clr  p2.5
+0111 E580            173                             mov  a, p0
+0113 D2A5            174                             setb p2.5
+0115 F0              175                             movx @dptr, a
+0116 C2A5            176                             clr  p2.5
+0118 E580            177                             mov  a, p0
+011A D2A5            178                             setb p2.5
+011C F0              179                             movx @dptr, a
+011D C2A5            180                             clr  p2.5
+011F E580            181                             mov  a, p0
+0121 D2A5            182                             setb p2.5
+0123 F0              183                             movx @dptr, a
+0124 C2A5            184                             clr  p2.5
+0126 E580            185                             mov  a, p0
+0128 D2A5            186                             setb p2.5
+012A F0              187                             movx @dptr, a                   ;18
+012B C2A5            188                             clr  p2.5
+A51 MACRO ASSEMBLER  SPAREUSB                                                             12/02/2003 15:00:30 PAGE     4
+
+012D E580            189                             mov  a, p0
+012F D2A5            190                             setb p2.5
+0131 F0              191                             movx @dptr, a
+0132 C2A5            192                             clr  p2.5
+0134 E580            193                             mov  a, p0
+0136 D2A5            194                             setb p2.5
+0138 F0              195                             movx @dptr, a
+0139 C2A5            196                             clr  p2.5
+013B E580            197                             mov  a, p0
+013D D2A5            198                             setb p2.5
+013F F0              199                             movx @dptr, a
+0140 C2A5            200                             clr  p2.5
+0142 E580            201                             mov  a, p0
+0144 D2A5            202                             setb p2.5
+0146 F0              203                             movx @dptr, a
+0147 C2A5            204                             clr  p2.5
+0149 E580            205                             mov  a, p0
+014B D2A5            206                             setb p2.5
+014D F0              207                             movx @dptr, a
+014E C2A5            208                             clr  p2.5
+0150 E580            209                             mov  a, p0
+0152 D2A5            210                             setb p2.5
+0154 F0              211                             movx @dptr, a
+0155 C2A5            212                             clr  p2.5
+0157 E580            213                             mov  a, p0
+0159 D2A5            214                             setb p2.5
+015B F0              215                             movx @dptr, a
+015C C2A5            216                             clr  p2.5
+015E E580            217                             mov  a, p0
+0160 D2A5            218                             setb p2.5
+0162 F0              219                             movx @dptr, a                   ;20
+0163 C2A5            220                             clr  p2.5
+0165 E580            221                             mov  a, p0
+0167 D2A5            222                             setb p2.5
+0169 F0              223                             movx @dptr, a
+016A C2A5            224                             clr  p2.5
+016C E580            225                             mov  a, p0
+016E D2A5            226                             setb p2.5
+0170 F0              227                             movx @dptr, a
+0171 C2A5            228                             clr  p2.5
+0173 E580            229                             mov  a, p0
+0175 D2A5            230                             setb p2.5
+0177 F0              231                             movx @dptr, a
+0178 C2A5            232                             clr  p2.5
+017A E580            233                             mov  a, p0
+017C D2A5            234                             setb p2.5
+017E F0              235                             movx @dptr, a
+017F C2A5            236                             clr  p2.5
+0181 E580            237                             mov  a, p0
+0183 D2A5            238                             setb p2.5
+0185 F0              239                             movx @dptr, a
+0186 C2A5            240                             clr  p2.5
+0188 E580            241                             mov  a, p0
+018A D2A5            242                             setb p2.5
+018C F0              243                             movx @dptr, a
+018D C2A5            244                             clr  p2.5
+018F E580            245                             mov  a, p0
+0191 D2A5            246                             setb p2.5
+0193 F0              247                             movx @dptr, a
+0194 C2A5            248                             clr  p2.5
+0196 E580            249                             mov  a, p0
+0198 D2A5            250                             setb p2.5
+019A F0              251                             movx @dptr, a                   ;28
+019B C2A5            252                             clr  p2.5
+019D E580            253                             mov  a, p0
+019F D2A5            254                             setb p2.5
+A51 MACRO ASSEMBLER  SPAREUSB                                                             12/02/2003 15:00:30 PAGE     5
+
+01A1 F0              255                             movx @dptr, a
+01A2 C2A5            256                             clr  p2.5
+01A4 E580            257                             mov  a, p0
+01A6 D2A5            258                             setb p2.5
+01A8 F0              259                             movx @dptr, a
+01A9 C2A5            260                             clr  p2.5
+01AB E580            261                             mov  a, p0
+01AD D2A5            262                             setb p2.5
+01AF F0              263                             movx @dptr, a
+01B0 C2A5            264                             clr  p2.5
+01B2 E580            265                             mov  a, p0
+01B4 D2A5            266                             setb p2.5
+01B6 F0              267                             movx @dptr, a
+01B7 C2A5            268                             clr  p2.5
+01B9 E580            269                             mov  a, p0
+01BB D2A5            270                             setb p2.5
+01BD F0              271                             movx @dptr, a
+01BE C2A5            272                             clr  p2.5
+01C0 E580            273                             mov  a, p0
+01C2 D2A5            274                             setb p2.5
+01C4 F0              275                             movx @dptr, a
+01C5 C2A5            276                             clr  p2.5
+01C7 E580            277                             mov  a, p0
+01C9 D2A5            278                             setb p2.5
+01CB F0              279                             movx @dptr, a
+01CC C2A5            280                             clr  p2.5
+01CE E580            281                             mov  a, p0
+01D0 D2A5            282                             setb p2.5
+01D2 F0              283                             movx @dptr, a                   ;30
+01D3 C2A5            284                             clr  p2.5
+01D5 E580            285                             mov  a, p0
+01D7 D2A5            286                             setb p2.5
+01D9 F0              287                             movx @dptr, a
+01DA C2A5            288                             clr  p2.5
+01DC E580            289                             mov  a, p0
+01DE D2A5            290                             setb p2.5
+01E0 F0              291                             movx @dptr, a
+01E1 C2A5            292                             clr  p2.5
+01E3 E580            293                             mov  a, p0
+01E5 D2A5            294                             setb p2.5
+01E7 F0              295                             movx @dptr, a
+01E8 C2A5            296                             clr  p2.5
+01EA E580            297                             mov  a, p0
+01EC D2A5            298                             setb p2.5
+01EE F0              299                             movx @dptr, a
+01EF C2A5            300                             clr  p2.5
+01F1 E580            301                             mov  a, p0
+01F3 D2A5            302                             setb p2.5
+01F5 F0              303                             movx @dptr, a
+01F6 C2A5            304                             clr  p2.5
+01F8 E580            305                             mov  a, p0
+01FA D2A5            306                             setb p2.5
+01FC F0              307                             movx @dptr, a
+01FD C2A5            308                             clr  p2.5
+01FF E580            309                             mov  a, p0
+0201 D2A5            310                             setb p2.5
+0203 F0              311                             movx @dptr, a
+0204 C2A5            312                             clr  p2.5
+0206 E580            313                             mov  a, p0
+0208 D2A5            314                             setb p2.5
+020A F0              315                             movx @dptr, a                   ;38
+020B C2A5            316                             clr  p2.5
+020D E580            317                             mov  a, p0
+020F D2A5            318                             setb p2.5
+0211 F0              319                             movx @dptr, a
+0212 C2A5            320                             clr  p2.5
+A51 MACRO ASSEMBLER  SPAREUSB                                                             12/02/2003 15:00:30 PAGE     6
+
+0214 E580            321                             mov  a, p0
+0216 D2A5            322                             setb p2.5
+0218 F0              323                             movx @dptr, a
+0219 C2A5            324                             clr  p2.5
+021B E580            325                             mov  a, p0
+021D D2A5            326                             setb p2.5
+021F F0              327                             movx @dptr, a
+0220 C2A5            328                             clr  p2.5
+0222 E580            329                             mov  a, p0
+0224 D2A5            330                             setb p2.5
+0226 F0              331                             movx @dptr, a
+0227 C2A5            332                             clr  p2.5
+0229 E580            333                             mov  a, p0
+022B D2A5            334                             setb p2.5
+022D F0              335                             movx @dptr, a
+022E C2A5            336                             clr  p2.5
+0230 E580            337                             mov  a, p0
+0232 D2A5            338                             setb p2.5
+0234 F0              339                             movx @dptr, a
+0235 C2A5            340                             clr  p2.5
+0237 E580            341                             mov  a, p0
+0239 D2A5            342                             setb p2.5
+023B F0              343                             movx @dptr, a
+023C C2A5            344                             clr  p2.5
+023E E580            345                             mov  a, p0
+0240 D2A5            346                             setb p2.5
+0242 F0              347                             movx @dptr, a                   ;40
+0243 74FA            348                             mov  a, #0fah
+0245 0582            349                             inc  dpl
+0247 F0              350                             movx @dptr, a                   ;Valid tx-buffer
+0248 750000   F      351                             mov  sendover, #0
+024B D2AF            352                             setb ea
+024D D50002   F      353                             djnz iLoop, label_13            ;to complete 512 bytes
+0250 8003            354                             sjmp label_14
+0252 020000   F      355     label_13:               ljmp label_10
+                     356     
+                     357     
+0255 7590FF          358     label_14:               mov  p1, #0ffh
+0258 C3              359                             clr  c
+0259 7B20            360                             mov  r3, #20h
+025B E500     F      361                             mov  a, spare_ad1
+025D 3B              362                             addc a, r3
+025E F500     F      363                             mov  spare_ad1, a
+0260 7B00            364                             mov  r3, #0
+0262 E500     F      365                             mov  a, spare_ad2
+0264 3B              366                             addc a, r3
+0265 F500     F      367                             mov  spare_ad2, a
+0267 E500     F      368                             mov  a, spare_ad3
+0269 3B              369                             addc a, r3
+026A F500     F      370                             mov  spare_ad3, a
+026C B40202          371                             cjne a, #2, label_15
+026F 8003            372                             sjmp label_20
+0271 020000   F      373     label_15:               ljmp label_02
+                     374     
+                     375     
+0274 E4              376     label_20:               clr  a
+0275 F500     F      377                             mov  spare_ad3, a
+0277 22              378                             ret
+                     379     
+                     380     END
+                             
+A51 MACRO ASSEMBLER  SPAREUSB                                                             12/02/2003 15:00:30 PAGE     7
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+CODE_SEG . . . . .  C SEG    0278H       REL=UNIT
+DATA_SEG1. . . . .  D SEG    0008H       REL=UNIT
+DPL. . . . . . . .  D ADDR   0082H   A   
+EA . . . . . . . .  B ADDR   00A8H.7 A   
+ICOUNT0. . . . . .  D ADDR   0006H   R   SEG=DATA_SEG1
+ICOUNT1. . . . . .  D ADDR   0007H   R   SEG=DATA_SEG1
+ILOOP. . . . . . .  D ADDR   0005H   R   SEG=DATA_SEG1
+LABEL_01 . . . . .  C ADDR   0007H   R   SEG=CODE_SEG
+LABEL_02 . . . . .  C ADDR   0014H   R   SEG=CODE_SEG
+LABEL_09 . . . . .  C ADDR   0050H   R   SEG=CODE_SEG
+LABEL_10 . . . . .  C ADDR   005BH   R   SEG=CODE_SEG
+LABEL_11 . . . . .  C ADDR   0061H   R   SEG=CODE_SEG
+LABEL_12 . . . . .  C ADDR   006CH   R   SEG=CODE_SEG
+LABEL_13 . . . . .  C ADDR   0252H   R   SEG=CODE_SEG
+LABEL_14 . . . . .  C ADDR   0255H   R   SEG=CODE_SEG
+LABEL_15 . . . . .  C ADDR   0271H   R   SEG=CODE_SEG
+LABEL_20 . . . . .  C ADDR   0274H   R   SEG=CODE_SEG
+P0 . . . . . . . .  D ADDR   0080H   A   
+P1 . . . . . . . .  D ADDR   0090H   A   
+P2 . . . . . . . .  D ADDR   00A0H   A   
+SENDOVER . . . . .  D ADDR   0000H   R   SEG=DATA_SEG1
+SPAREUSB . . . . .  C ADDR   0000H   R   SEG=CODE_SEG
+SPARE_AD1. . . . .  D ADDR   0002H   R   SEG=DATA_SEG1
+SPARE_AD2. . . . .  D ADDR   0003H   R   SEG=DATA_SEG1
+SPARE_AD3. . . . .  D ADDR   0004H   R   SEG=DATA_SEG1
+SPARE_CE . . . . .  D ADDR   0001H   R   SEG=DATA_SEG1
+SPARE_TO_USB . . .  N NUMB   -----       
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

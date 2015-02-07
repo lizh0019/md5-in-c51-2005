@@ -1,0 +1,1 @@
+".\SpareUsb.A51" SET (SMALL) DEBUG PRINT(.\LST\SpareUsb.lst) OBJECT(.\OUT\SpareUsb.obj) EP

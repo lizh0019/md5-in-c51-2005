@@ -1,0 +1,947 @@
+C51 COMPILER V6.14  ISR                                                                    11/25/2005 10:10:41 PAGE 1   
+
+
+C51 COMPILER V6.14, COMPILATION OF MODULE ISR
+OBJECT MODULE PLACED IN .\OUT\Isr.obj
+COMPILER INVOKED BY: c:\Keil\C51\BIN\C51.EXE .\Isr.c LARGE BROWSE DEBUG OBJECTEXTEND CODE LISTINCLUDE SYMBOLS PRINT(.\LS
+                    -T\Isr.lst) OBJECT(.\OUT\Isr.obj) 
+
+stmt level    source
+
+   1          /*
+   2             //*************************************************************************
+   3             //
+   4             //                  		ZLGMCU
+   5             //				www.zlgmcu.com
+   6             // File Name:	ISR.C
+   7             // Revision:		V0.2(2002-04-08)
+   8             // Use library:  	USB51S.LIB
+   9             // Note:		USB51S.LIB不带DMA控制功能
+  10             //*************************************************************************
+  11             */
+  12          
+  13          #include <stdio.h>
+   1      =1  /*--------------------------------------------------------------------------
+   2      =1  STDIO.H
+   3      =1  
+   4      =1  Prototypes for standard I/O functions.
+   5      =1  Copyright (c) 1988-2001 Keil Elektronik GmbH and Keil Software, Inc.
+   6      =1  All rights reserved.
+   7      =1  --------------------------------------------------------------------------*/
+   8      =1  
+   9      =1  #ifndef EOF
+  10      =1   #define EOF -1
+  11      =1  #endif
+  12      =1  
+  13      =1  #ifndef NULL
+  14      =1   #define NULL ((void *) 0)
+  15      =1  #endif
+  16      =1  
+  17      =1  #ifndef _SIZE_T
+  18      =1   #define _SIZE_T
+  19      =1   typedef unsigned int size_t;
+  20      =1  #endif
+  21      =1  
+  22      =1  #pragma SAVE
+  23      =1  #pragma REGPARMS
+  24      =1  extern char _getkey (void);
+  25      =1  extern char getchar (void);
+  26      =1  extern char ungetchar (char);
+  27      =1  extern char putchar (char);
+  28      =1  extern int printf   (const char *, ...);
+  29      =1  extern int sprintf  (char *, const char *, ...);
+  30      =1  extern int vprintf  (const char *, char *);
+  31      =1  extern int vsprintf (char *, const char *, char *);
+  32      =1  extern char *gets (char *, int n);
+  33      =1  extern int scanf (const char *, ...);
+  34      =1  extern int sscanf (char *, const char *, ...);
+  35      =1  extern int puts (const char *);
+  36      =1  
+  37      =1  #pragma RESTORE
+  14          #include <string.h>
+   1      =1  /*--------------------------------------------------------------------------
+   2      =1  STRING.H
+   3      =1  
+C51 COMPILER V6.14  ISR                                                                    11/25/2005 10:10:41 PAGE 2   
+
+   4      =1  String functions.
+   5      =1  Copyright (c) 1988-2001 Keil Elektronik GmbH and Keil Software, Inc.
+   6      =1  All rights reserved.
+   7      =1  --------------------------------------------------------------------------*/
+   8      =1  
+   9      =1  #ifndef _SIZE_T
+           =1  #define _SIZE_T
+           =1  typedef unsigned int size_t;
+           =1 #endif
+  13      =1  
+  14      =1  #ifndef NULL
+           =1  #define NULL ((void *) 0L)
+           =1 #endif
+  17      =1  
+  18      =1  #pragma SAVE
+  19      =1  #pragma REGPARMS
+  20      =1  extern char *strcat (char *s1, char *s2);
+  21      =1  extern char *strncat (char *s1, char *s2, int n);
+  22      =1  
+  23      =1  extern char strcmp (char *s1, char *s2);
+  24      =1  extern char strncmp (char *s1, char *s2, int n);
+  25      =1  
+  26      =1  extern char *strcpy (char *s1, char *s2);
+  27      =1  extern char *strncpy (char *s1, char *s2, int n);
+  28      =1  
+  29      =1  extern int strlen (char *);
+  30      =1  
+  31      =1  extern char *strchr (const char *s, char c);
+  32      =1  extern int strpos (const char *s, char c);
+  33      =1  extern char *strrchr (const char *s, char c);
+  34      =1  extern int strrpos (const char *s, char c);
+  35      =1  
+  36      =1  extern int strspn (char *s, char *set);
+  37      =1  extern int strcspn (char *s, char *set);
+  38      =1  extern char *strpbrk (char *s, char *set);
+  39      =1  extern char *strrpbrk (char *s, char *set);
+  40      =1  extern char *strstr  (char *s, char *sub);
+  41      =1  
+  42      =1  extern char memcmp (void *s1, void *s2, int n);
+  43      =1  extern void *memcpy (void *s1, void *s2, int n);
+  44      =1  extern void *memchr (void *s, char val, int n);
+  45      =1  extern void *memccpy (void *s1, void *s2, char val, int n);
+  46      =1  extern void *memmove (void *s1, void *s2, int n);
+  47      =1  extern void *memset  (void *s, char val, int n);
+  48      =1  #pragma RESTORE
+  15          #include <reg51.h>                /* special function register declarations   */
+   1      =1  /*--------------------------------------------------------------------------
+   2      =1  REG51.H
+   3      =1  
+   4      =1  Header file for generic 80C51 and 80C31 microcontroller.
+   5      =1  Copyright (c) 1988-2001 Keil Elektronik GmbH and Keil Software, Inc.
+   6      =1  All rights reserved.
+   7      =1  --------------------------------------------------------------------------*/
+   8      =1  
+   9      =1  /*  BYTE Register  */
+  10      =1  sfr P0   = 0x80;
+  11      =1  sfr P1   = 0x90;
+  12      =1  sfr P2   = 0xA0;
+  13      =1  sfr P3   = 0xB0;
+  14      =1  sfr PSW  = 0xD0;
+  15      =1  sfr ACC  = 0xE0;
+  16      =1  sfr B    = 0xF0;
+C51 COMPILER V6.14  ISR                                                                    11/25/2005 10:10:41 PAGE 3   
+
+  17      =1  sfr SP   = 0x81;
+  18      =1  sfr DPL  = 0x82;
+  19      =1  sfr DPH  = 0x83;
+  20      =1  sfr PCON = 0x87;
+  21      =1  sfr TCON = 0x88;
+  22      =1  sfr TMOD = 0x89;
+  23      =1  sfr TL0  = 0x8A;
+  24      =1  sfr TL1  = 0x8B;
+  25      =1  sfr TH0  = 0x8C;
+  26      =1  sfr TH1  = 0x8D;
+  27      =1  sfr IE   = 0xA8;
+  28      =1  sfr IP   = 0xB8;
+  29      =1  sfr SCON = 0x98;
+  30      =1  sfr SBUF = 0x99;
+  31      =1  
+  32      =1  
+  33      =1  /*  BIT Register  */
+  34      =1  /*  PSW   */
+  35      =1  sbit CY   = 0xD7;
+  36      =1  sbit AC   = 0xD6;
+  37      =1  sbit F0   = 0xD5;
+  38      =1  sbit RS1  = 0xD4;
+  39      =1  sbit RS0  = 0xD3;
+  40      =1  sbit OV   = 0xD2;
+  41      =1  sbit P    = 0xD0;
+  42      =1  
+  43      =1  /*  TCON  */
+  44      =1  sbit TF1  = 0x8F;
+  45      =1  sbit TR1  = 0x8E;
+  46      =1  sbit TF0  = 0x8D;
+  47      =1  sbit TR0  = 0x8C;
+  48      =1  sbit IE1  = 0x8B;
+  49      =1  sbit IT1  = 0x8A;
+  50      =1  sbit IE0  = 0x89;
+  51      =1  sbit IT0  = 0x88;
+  52      =1  
+  53      =1  /*  IE   */
+  54      =1  sbit EA   = 0xAF;
+  55      =1  sbit ES   = 0xAC;
+  56      =1  sbit ET1  = 0xAB;
+  57      =1  sbit EX1  = 0xAA;
+  58      =1  sbit ET0  = 0xA9;
+  59      =1  sbit EX0  = 0xA8;
+  60      =1  
+  61      =1  /*  IP   */ 
+  62      =1  sbit PS   = 0xBC;
+  63      =1  sbit PT1  = 0xBB;
+  64      =1  sbit PX1  = 0xBA;
+  65      =1  sbit PT0  = 0xB9;
+  66      =1  sbit PX0  = 0xB8;
+  67      =1  
+  68      =1  /*  P3  */
+  69      =1  sbit RD   = 0xB7;
+  70      =1  sbit WR   = 0xB6;
+  71      =1  sbit T1   = 0xB5;
+  72      =1  sbit T0   = 0xB4;
+  73      =1  sbit INT1 = 0xB3;
+  74      =1  sbit INT0 = 0xB2;
+  75      =1  sbit TXD  = 0xB1;
+  76      =1  sbit RXD  = 0xB0;
+  77      =1  
+  78      =1  /*  SCON  */
+C51 COMPILER V6.14  ISR                                                                    11/25/2005 10:10:41 PAGE 4   
+
+  79      =1  sbit SM0  = 0x9F;
+  80      =1  sbit SM1  = 0x9E;
+  81      =1  sbit SM2  = 0x9D;
+  82      =1  sbit REN  = 0x9C;
+  83      =1  sbit TB8  = 0x9B;
+  84      =1  sbit RB8  = 0x9A;
+  85      =1  sbit TI   = 0x99;
+  86      =1  sbit RI   = 0x98;
+  16          #include "isr.h"
+   1      =1  /*
+   2      =1     //*************************************************************************
+   3      =1     //
+   4      =1     //                  		ZLGMCU
+   5      =1     //				www.zlgmcu.com
+   6      =1     // File Name:	ISR.h
+   7      =1     // Revision:		V0.2(2002-04-08)
+   8      =1     // Use library:  	USB51S.LIB
+   9      =1     // Note:		USB51S.LIB不带DMA控制功能
+  10      =1     //*************************************************************************
+  11      =1     */
+  12      =1  
+  13      =1  #ifndef __ISR_H__
+  14      =1  #define __ISR_H__
+  15      =1  
+  16      =1     /*
+  17      =1     //*************************************************************************
+  18      =1     // D12控制引脚定义
+  19      =1     //*************************************************************************
+  20      =1     */
+  21      =1  
+  22      =1  	sbit MCU_D12CS	  = P1^6;
+  23      =1  	
+  24      =1  	sbit MCU_D12RST   = P1^7;
+  25      =1  	//sbit MCU_D12RST   = P3^5;
+  26      =1  	
+  27      =1  	sbit D12SUSPD	  = P3^3;
+  28      =1  
+  29      =1  
+  30      =1  /*
+  31      =1     //*************************************************************************
+  32      =1     // basic #defines
+  33      =1     //*************************************************************************
+  34      =1     */
+  35      =1  
+  36      =1  #define DISABLE		EA=0
+  37      =1  #define ENABLE		EA=1
+  38      =1  
+  39      =1  
+  40      =1  #define MAX_ENDPOINTS      (unsigned char)0x3
+  41      =1  
+  42      =1  #define EP0_TX_FIFO_SIZE   16
+  43      =1  #define EP0_RX_FIFO_SIZE   16
+  44      =1  #define EP0_PACKET_SIZE    16
+  45      =1  
+  46      =1  #define EP1_TX_FIFO_SIZE   4
+  47      =1  #define EP1_RX_FIFO_SIZE   4
+  48      =1  #define EP1_PACKET_SIZE    4
+  49      =1  
+  50      =1  #define EP2_TX_FIFO_SIZE   64
+  51      =1  #define EP2_RX_FIFO_SIZE   64
+  52      =1  #define EP2_PACKET_SIZE    64
+  53      =1  
+C51 COMPILER V6.14  ISR                                                                    11/25/2005 10:10:41 PAGE 5   
+
+  54      =1  #define D12_NOLAZYCLOCK			0x02
+  55      =1  #define D12_CLOCKRUNNING        0x04
+  56      =1  #define D12_INTERRUPTMODE		0x08
+  57      =1  #define D12_SOFTCONNECT			0x10
+  58      =1  #define D12_ENDP_NONISO			0x00
+  59      =1  #define D12_ENDP_ISOOUT			0x40
+  60      =1  #define D12_ENDP_ISOIN			0x80
+  61      =1  #define D12_ENDP_ISOIO			0xC0
+  62      =1  
+  63      =1  #define D12_CLOCK_12M			0x03
+  64      =1  #define D12_CLOCK_4M			0x0b
+  65      =1  #define D12_SETTOONE            0x40
+  66      =1  #define D12_SOFONLY				0x80
+  67      =1  
+  68      =1  /*
+  69      =1     //*************************************************************************
+  70      =1     // masks
+  71      =1     //*************************************************************************
+  72      =1  */
+  73      =1  
+  74      =1  #define USB_RECIPIENT            (unsigned char)0x1F
+  75      =1  #define USB_RECIPIENT_DEVICE     (unsigned char)0x00
+  76      =1  #define USB_RECIPIENT_INTERFACE  (unsigned char)0x01
+  77      =1  #define USB_RECIPIENT_ENDPOINT   (unsigned char)0x02
+  78      =1  
+  79      =1  #define USB_REQUEST_TYPE_MASK    (unsigned char)0x60
+  80      =1  #define USB_STANDARD_REQUEST     (unsigned char)0x00
+  81      =1  #define USB_CLASS_REQUEST        (unsigned char)0x20
+  82      =1  #define USB_VENDOR_REQUEST       (unsigned char)0x40
+  83      =1  
+  84      =1  #define USB_REQUEST_MASK         (unsigned char)0x0F
+  85      =1  
+  86      =1  #define DEVICE_ADDRESS_MASK      0x7F
+  87      =1  
+  88      =1  #define USB_ENDPOINT_DIRECTION_MASK               0x80
+  89      =1  
+  90      =1  
+  91      =1  /*
+  92      =1     //*************************************************************************
+  93      =1     // macros
+  94      =1     //*************************************************************************
+  95      =1  */
+  96      =1  #define SWAP(x)   ((((x) & 0xFF) << 8) | (((x) >> 8) & 0xFF))
+  97      =1  
+  98      =1  #define MSB(x)    (((x) >> 8) & 0xFF)
+  99      =1  #define LSB(x)    ((x) & 0xFF)
+ 100      =1  
+ 101      =1  #define FALSE   0
+ 102      =1  #define TRUE    (!FALSE)
+ 103      =1  
+ 104      =1  /*
+ 105      =1     //*************************************************************************
+ 106      =1     // basic typedefs
+ 107      =1     //*************************************************************************
+ 108      =1  */
+ 109      =1  typedef unsigned char   UCHAR;
+ 110      =1  typedef unsigned short  USHORT;
+ 111      =1  typedef unsigned long   ULONG;
+ 112      =1  typedef unsigned char   BOOL;
+ 113      =1  
+ 114      =1  /*
+ 115      =1     //*************************************************************************
+C51 COMPILER V6.14  ISR                                                                    11/25/2005 10:10:41 PAGE 6   
+
+ 116      =1     // structure and union definitions
+ 117      =1     //*************************************************************************
+ 118      =1  */
+ 119      =1  typedef union _epp_flags
+ 120      =1  {
+ 121      =1  	struct _flags
+ 122      =1  	{
+ 123      =1  		unsigned char timer               	: 1;
+ 124      =1  		unsigned char bus_reset           	: 1;
+ 125      =1  		unsigned char suspend             	: 1;
+ 126      =1  		unsigned char setup_packet  	  	: 1;
+ 127      =1  		unsigned char remote_wakeup		   	: 1;
+ 128      =1  		unsigned char in_isr		      	: 1;
+ 129      =1  		unsigned char control_state			: 2;
+ 130      =1  
+ 131      =1  		unsigned char configuration			: 1;
+ 132      =1  		unsigned char command				: 1;
+ 133      =1  		unsigned char ep1_rxdone			: 1;
+ 134      =1  		unsigned char ep2_rxdone			: 1; //Add by Liu Ying Bin
+ 135      =1  	} bits;
+ 136      =1  	unsigned short value;
+ 137      =1  } EPPFLAGS;
+ 138      =1  
+ 139      =1  typedef union _rom_addr 
+ 140      =1  {
+ 141      =1  	struct _bytes
+ 142      =1  	{
+ 143      =1  		unsigned char high;
+ 144      =1  		unsigned char low;
+ 145      =1  	}byte;
+ 146      =1  	unsigned int word;
+ 147      =1  }rom_addr;
+ 148      =1  
+ 149      =1  
+ 150      =1  typedef struct _device_request
+ 151      =1  {
+ 152      =1  	unsigned char bmRequestType;
+ 153      =1  	unsigned char bRequest;
+ 154      =1  	unsigned short wValue;
+ 155      =1  	unsigned short wIndex;
+ 156      =1  	unsigned short wLength;
+ 157      =1  } DEVICE_REQUEST;
+ 158      =1  
+ 159      =1  typedef struct _IO_REQUEST {
+ 160      =1  	unsigned short	uAddressL;
+ 161      =1  	unsigned char	bAddressH;
+ 162      =1  	unsigned short	uSize;
+ 163      =1  	unsigned char	bCommand;
+ 164      =1  } IO_REQUEST, *PIO_REQUEST;
+ 165      =1  
+ 166      =1  #define MAX_CONTROLDATA_SIZE	8
+ 167      =1  
+ 168      =1  typedef struct _control_xfer
+ 169      =1  {
+ 170      =1  	DEVICE_REQUEST DeviceRequest;
+ 171      =1  	unsigned short wLength;
+ 172      =1  	unsigned short wCount;
+ 173      =1  	unsigned char * pData;
+ 174      =1  	unsigned char dataBuffer[MAX_CONTROLDATA_SIZE];
+ 175      =1  } CONTROL_XFER;
+ 176      =1  
+ 177      =1  /*
+C51 COMPILER V6.14  ISR                                                                    11/25/2005 10:10:41 PAGE 7   
+
+ 178      =1     //*************************************************************************
+ 179      =1     // USB utility functions
+ 180      =1     //*************************************************************************
+ 181      =1  */
+ 182      =1  
+ 183      =1  extern void disconnect_USB(void);
+ 184      =1  extern void connect_USB(void);
+ 185      =1  extern void reconnect_USB(void);
+ 186      =1  extern void init_unconfig(void);
+ 187      =1  extern void init_config(void);
+ 188      =1  extern void single_transmit(unsigned char * pData, unsigned char len);
+ 189      =1  extern void code_transmit(unsigned char code * pRomData, unsigned short len);
+ 190      =1  extern void control_handler(void);
+ 191      =1  extern void reserved(void);
+ 192      =1  extern void fn_usb_isr(void);
+ 193      =1  extern void usbserve(void);
+ 194      =1  extern void D12_SetMode(unsigned char bConfig, unsigned char bClkDiv);
+ 195      =1  extern void D12_SetDMA(unsigned char bMode);
+ 196      =1  extern unsigned char D12_ReadLastTransactionStatus(unsigned char bEndp);
+ 197      =1  extern unsigned char D12_ReadEndpoint(unsigned char endp, unsigned char len, unsigned char * buf);
+ 198      =1  extern unsigned char D12_WriteEndpoint(unsigned char endp, unsigned char len, unsigned char * buf);
+ 199      =1  extern char data sendover;
+ 200      =1  extern unsigned char Readlens;
+ 201      =1  
+ 202      =1  #endif
+ 203      =1  
+ 204      =1  
+ 205      =1  
+  17          #include "mainloop.h"
+   1      =1  /*
+   2      =1     //*************************************************************************
+   3      =1     //
+   4      =1     //                  		ZLGMCU
+   5      =1     //				www.zlgmcu.com
+   6      =1     // File Name:	MAINLOOP.H
+   7      =1     // Revision:		V0.2(2002-04-08)
+   8      =1     // Use library:  	USB51S.LIB
+   9      =1     // Note:		USB51S.LIB不带DMA控制功能
+  10      =1     //*************************************************************************
+  11      =1     */
+  12      =1  
+  13      =1  #ifndef __MAINLOOP_H__
+  14      =1  #define __MAINLOOP_H__
+  15      =1  
+  16      =1  	//sbit MCU_SWM0     = P1^0;
+  17      =1  	//sbit MCU_SWM1     = P1^1;
+  18      =1  	//sbit MCU_LED0	  = P1^2;
+  19      =1  	//sbit MCU_LED1	  = P1^3;
+  20      =1  
+  21      =1  extern void check_key_LED(void);
+  22      =1  #endif
+  23      =1  
+  18          #include "protozlg.h"
+   1      =1  /*
+   2      =1     //*************************************************************************
+   3      =1     //
+   4      =1     //                  		ZLGMCU
+   5      =1     //				www.zlgmcu.com
+   6      =1     // File Name:	ISR.C
+   7      =1     // Revision:		V0.2(2002-04-08)
+   8      =1     // Use library:  	USB51S.LIB
+   9      =1     // Note:		USB51S.LIB不带DMA控制功能
+C51 COMPILER V6.14  ISR                                                                    11/25/2005 10:10:41 PAGE 8   
+
+  10      =1     //*************************************************************************
+  11      =1     */
+  12      =1  
+  13      =1  #ifndef __PROTOZLG_H__
+  14      =1  #define __PROTOZLG_H__
+  15      =1  
+  16      =1  /*
+  17      =1     //*************************************************************************
+  18      =1     // USB vendor device requests
+  19      =1     //*************************************************************************
+  20      =1  */
+  21      =1  #define SETUP_DMA_REQUEST 		0x0471
+  22      =1  #define GET_FIRMWARE_VERSION    0x0472
+  23      =1  #define GET_SET_TWAIN_REQUEST   0x0473
+  24      =1  #define GET_BUFFER_SIZE		    0x0474
+  25      =1  
+  26      =1  void read_write_register(void);
+  27      =1  extern void stall_ep0(void);
+  28      =1  
+  29      =1  #endif
+  19          
+  20          /*
+  21          //*************************************************************************
+  22          //  Public static data
+  23          //*************************************************************************
+  24          */
+  25          
+  26          EPPFLAGS bEPPflags;
+  27          CONTROL_XFER ControlData;
+  28          
+  29          /* ISR static vars */
+  30          unsigned char idata GenEpBuf[EP1_PACKET_SIZE];
+  31          unsigned char idata EpBuf[EP2_PACKET_SIZE];
+  32          IO_REQUEST idata ioRequest;
+  33          extern char data sendover;
+  34          unsigned char Readlens;
+  35          
+  36          //厂商请求入口地址
+  37          code void (*VendorDeviceRequest[])(void) =
+  38          {
+  39          	reserved,
+  40          	reserved,
+  41          	reserved,
+  42          	reserved,
+  43          	reserved,
+  44          	reserved,
+  45          	reserved,
+  46          	reserved,
+  47          	reserved,
+  48          	reserved,
+  49          	reserved,
+  50          	reserved,
+  51          	read_write_register,
+  52          	reserved,
+  53          	reserved,
+  54          	reserved
+  55          };
+  56          
+  57          //USB总线重新连接(先断开，再连接)子程序
+  58          void reconnect_USB(void)
+  59          {
+  60   1      	unsigned long clk_cnt;	
+C51 COMPILER V6.14  ISR                                                                    11/25/2005 10:10:41 PAGE 9   
+
+  61   1      
+  62   1      	D12SUSPD = 0;
+  63   1      	disconnect_USB();
+  64   1      	for (clk_cnt=0;clk_cnt<=0x9000;clk_cnt++) {}
+  65   1      	connect_USB();
+  66   1      
+  67   1      //	MCU_LED0 = 1;//灭LED显示（实际应用中可去掉）
+  68   1      //	MCU_LED1 = 1;//（实际应用中可去掉）
+  69   1      }
+  70          
+  71          //断开USB总线连接
+  72          void disconnect_USB(void)
+  73          {
+  74   1      	D12_SetMode(D12_NOLAZYCLOCK, D12_SETTOONE | D12_CLOCK_12M);
+  75   1      }
+  76          
+  77          //连接到USB总线
+  78          void connect_USB(void)
+  79          {
+  80   1      	DISABLE;
+  81   1      	bEPPflags.value = 0;
+  82   1      	ENABLE;
+  83   1      	D12_SetDMA(0x0);//设置D12工作模式
+  84   1      	D12_SetMode(D12_NOLAZYCLOCK|D12_SOFTCONNECT, D12_SETTOONE | D12_CLOCK_12M);
+  85   1      	sendover = 1;
+  86   1      }
+  87          
+  88          //总线复位中断服务子程序
+  89          void bus_reset(void)
+  90          {
+  91   1      //可添加用户代码(进行检测到总线复位的操作)
+  92   1      }
+  93          
+  94          //DMA操作结束中断服务子程序
+  95          void dma_eot(void)
+  96          {
+  97   1      //可添加用户代码(进行检测DMA操作结束的操作)
+  98   1      }
+  99          
+ 100          //端点1输出中断操作
+ 101          void ep1_txdone(void)
+ 102          {
+ 103   1      	D12_ReadLastTransactionStatus(3);//复位中断寄存器
+ 104   1      	//可添加用户代码(进行检测端点号3IN令牌的操作)
+ 105   1      }
+ 106          
+ 107          //端点1输入中断操作
+ 108          void ep1_rxdone(void)
+ 109          {
+ 110   1      	unsigned char len;
+ 111   1      	D12_ReadLastTransactionStatus(2);//复位中断寄存器
+ 112   1      	len = D12_ReadEndpoint(2, sizeof(GenEpBuf), GenEpBuf);//读取端点1接收数据
+ 113   1      	if (len != 0)
+ 114   1      		bEPPflags.bits.ep1_rxdone = 1;//标志端点1接收到数据
+ 115   1      }
+ 116          
+ 117          //端点2输出中断操作
+ 118          /*
+ 119          void ep2_txdone(void)
+ 120          {
+ 121              ep2_txdone_1();
+ 122          //	D12_ReadLastTransactionStatus(5);//复位中断寄存器
+C51 COMPILER V6.14  ISR                                                                    11/25/2005 10:10:41 PAGE 10  
+
+ 123          	//可添加用户代码(进行检测端点号5IN令牌的操作)
+ 124          //	sendover = 1;
+ 125          }
+ 126          */
+ 127          //端点2输入中断操作
+ 128          void ep2_rxdone(void)
+ 129          {	
+ 130   1      	D12_ReadLastTransactionStatus(4);//复位中断寄存器
+ 131   1      	Readlens = D12_ReadEndpoint(4, EP2_PACKET_SIZE, EpBuf);//读取端点2接收数据
+ 132   1      	if (Readlens != 0)
+ 133   1      		bEPPflags.bits.ep2_rxdone = 1;//标志端点2接收到数据
+ 134   1      }
+ 135          
+C51 COMPILER V6.14  ISR                                                                    11/25/2005 10:10:41 PAGE 11  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION reconnect_USB (BEGIN)
+                                           ; SOURCE LINE # 58
+                                           ; SOURCE LINE # 59
+                                           ; SOURCE LINE # 62
+0000 C2B3              CLR     D12SUSPD
+                                           ; SOURCE LINE # 63
+0002 120000      R     LCALL   disconnect_USB
+                                           ; SOURCE LINE # 64
+0005 900000      R     MOV     DPTR,#clk_cnt
+0008 120000      E     LCALL   ?C?LSTKXDATA
+000B 00                DB      00H
+000C 00                DB      00H
+000D 00                DB      00H
+000E 00                DB      00H
+000F         ?C0001:
+000F E4                CLR     A
+0010 FF                MOV     R7,A
+0011 7E90              MOV     R6,#090H
+0013 FD                MOV     R5,A
+0014 FC                MOV     R4,A
+0015 900000      R     MOV     DPTR,#clk_cnt
+0018 E0                MOVX    A,@DPTR
+0019 F8                MOV     R0,A
+001A A3                INC     DPTR
+001B E0                MOVX    A,@DPTR
+001C F9                MOV     R1,A
+001D A3                INC     DPTR
+001E E0                MOVX    A,@DPTR
+001F FA                MOV     R2,A
+0020 A3                INC     DPTR
+0021 E0                MOVX    A,@DPTR
+0022 FB                MOV     R3,A
+0023 D3                SETB    C
+0024 120000      E     LCALL   ?C?ULCMP
+0027 5021              JNC     ?C0002
+0029 900000      R     MOV     DPTR,#clk_cnt
+002C E0                MOVX    A,@DPTR
+002D FC                MOV     R4,A
+002E A3                INC     DPTR
+002F E0                MOVX    A,@DPTR
+0030 FD                MOV     R5,A
+0031 A3                INC     DPTR
+0032 E0                MOVX    A,@DPTR
+0033 FE                MOV     R6,A
+0034 A3                INC     DPTR
+0035 E0                MOVX    A,@DPTR
+0036 2401              ADD     A,#01H
+0038 FF                MOV     R7,A
+0039 E4                CLR     A
+003A 3E                ADDC    A,R6
+003B FE                MOV     R6,A
+003C E4                CLR     A
+003D 3D                ADDC    A,R5
+003E FD                MOV     R5,A
+003F E4                CLR     A
+0040 3C                ADDC    A,R4
+0041 FC                MOV     R4,A
+0042 900000      R     MOV     DPTR,#clk_cnt
+0045 120000      E     LCALL   ?C?LSTXDATA
+C51 COMPILER V6.14  ISR                                                                    11/25/2005 10:10:41 PAGE 12  
+
+0048 80C5              SJMP    ?C0001
+004A         ?C0002:
+                                           ; SOURCE LINE # 65
+004A 020000      R     LJMP    connect_USB
+             ; FUNCTION reconnect_USB (END)
+
+             ; FUNCTION disconnect_USB (BEGIN)
+                                           ; SOURCE LINE # 72
+                                           ; SOURCE LINE # 73
+                                           ; SOURCE LINE # 74
+0000 7D43              MOV     R5,#043H
+0002 7F02              MOV     R7,#02H
+0004 020000      E     LJMP    _D12_SetMode
+             ; FUNCTION disconnect_USB (END)
+
+             ; FUNCTION connect_USB (BEGIN)
+                                           ; SOURCE LINE # 78
+                                           ; SOURCE LINE # 79
+                                           ; SOURCE LINE # 80
+0000 C2AF              CLR     EA
+                                           ; SOURCE LINE # 81
+0002 E4                CLR     A
+0003 900000      R     MOV     DPTR,#bEPPflags
+0006 F0                MOVX    @DPTR,A
+0007 A3                INC     DPTR
+0008 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 82
+0009 D2AF              SETB    EA
+                                           ; SOURCE LINE # 83
+000B FF                MOV     R7,A
+000C 120000      E     LCALL   _D12_SetDMA
+                                           ; SOURCE LINE # 84
+000F 7D43              MOV     R5,#043H
+0011 7F12              MOV     R7,#012H
+0013 120000      E     LCALL   _D12_SetMode
+                                           ; SOURCE LINE # 85
+0016 750001      E     MOV     sendover,#01H
+                                           ; SOURCE LINE # 86
+0019 22                RET     
+             ; FUNCTION connect_USB (END)
+
+             ; FUNCTION bus_reset (BEGIN)
+                                           ; SOURCE LINE # 89
+                                           ; SOURCE LINE # 90
+                                           ; SOURCE LINE # 92
+0000 22                RET     
+             ; FUNCTION bus_reset (END)
+
+             ; FUNCTION dma_eot (BEGIN)
+                                           ; SOURCE LINE # 95
+                                           ; SOURCE LINE # 96
+                                           ; SOURCE LINE # 98
+0000 22                RET     
+             ; FUNCTION dma_eot (END)
+
+             ; FUNCTION ep1_txdone (BEGIN)
+                                           ; SOURCE LINE # 101
+                                           ; SOURCE LINE # 102
+                                           ; SOURCE LINE # 103
+0000 7F03              MOV     R7,#03H
+0002 020000      E     LJMP    _D12_ReadLastTransactionStatus
+             ; FUNCTION ep1_txdone (END)
+C51 COMPILER V6.14  ISR                                                                    11/25/2005 10:10:41 PAGE 13  
+
+
+             ; FUNCTION ep1_rxdone (BEGIN)
+                                           ; SOURCE LINE # 108
+                                           ; SOURCE LINE # 109
+                                           ; SOURCE LINE # 111
+0000 7F02              MOV     R7,#02H
+0002 120000      E     LCALL   _D12_ReadLastTransactionStatus
+                                           ; SOURCE LINE # 112
+0005 7B00              MOV     R3,#00H
+0007 7A00        R     MOV     R2,#HIGH GenEpBuf
+0009 7900        R     MOV     R1,#LOW GenEpBuf
+000B 7D04              MOV     R5,#04H
+000D 7F02              MOV     R7,#02H
+000F 120000      E     LCALL   _D12_ReadEndpoint
+;---- Variable 'len' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 113
+0012 EF                MOV     A,R7
+0013 6007              JZ      ?C0011
+                                           ; SOURCE LINE # 114
+0015 900000      R     MOV     DPTR,#bEPPflags+01H
+0018 E0                MOVX    A,@DPTR
+0019 4404              ORL     A,#04H
+001B F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 115
+001C         ?C0011:
+001C 22                RET     
+             ; FUNCTION ep1_rxdone (END)
+
+             ; FUNCTION ep2_rxdone (BEGIN)
+                                           ; SOURCE LINE # 128
+                                           ; SOURCE LINE # 129
+                                           ; SOURCE LINE # 130
+0000 7F04              MOV     R7,#04H
+0002 120000      E     LCALL   _D12_ReadLastTransactionStatus
+                                           ; SOURCE LINE # 131
+0005 7B00              MOV     R3,#00H
+0007 7A00        R     MOV     R2,#HIGH EpBuf
+0009 7900        R     MOV     R1,#LOW EpBuf
+000B 7D40              MOV     R5,#040H
+000D 7F04              MOV     R7,#04H
+000F 120000      E     LCALL   _D12_ReadEndpoint
+0012 900000      R     MOV     DPTR,#Readlens
+0015 EF                MOV     A,R7
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 132
+0017 6007              JZ      ?C0013
+                                           ; SOURCE LINE # 133
+0019 900000      R     MOV     DPTR,#bEPPflags+01H
+001C E0                MOVX    A,@DPTR
+001D 4408              ORL     A,#08H
+001F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 134
+0020         ?C0013:
+0020 22                RET     
+             ; FUNCTION ep2_rxdone (END)
+
+C51 COMPILER V6.14  ISR                                                                    11/25/2005 10:10:41 PAGE 14  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+P1 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0090H  1
+P3 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B0H  1
+T0 . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B4H  1
+AC . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D6H  1
+_IO_REQUEST. . . . . . . . . . . . . .  * TAG *  -----  STRUCT   -----  6
+  uAddressL. . . . . . . . . . . . . .  MEMBER   -----  U_INT    0000H  2
+  bAddressH. . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0002H  1
+  uSize. . . . . . . . . . . . . . . .  MEMBER   -----  U_INT    0003H  2
+  bCommand . . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0005H  1
+MCU_D12CS. . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0096H  1
+T1 . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B5H  1
+EA . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00AFH  1
+ULONG. . . . . . . . . . . . . . . . .  TYPEDEF  -----  U_LONG   -----  4
+_bytes . . . . . . . . . . . . . . . .  * TAG *  -----  STRUCT   -----  2
+  high . . . . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0000H  1
+  low. . . . . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0001H  1
+size_t . . . . . . . . . . . . . . . .  TYPEDEF  -----  U_INT    -----  2
+reconnect_USB. . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  clk_cnt. . . . . . . . . . . . . . .  AUTO     XDATA  U_LONG   0000H  4
+_D12_ReadLastTransactionStatus . . . .  EXTERN   CODE   PROC     -----  -----
+RD . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B7H  1
+_epp_flags . . . . . . . . . . . . . .  * TAG *  -----  UNION    -----  2
+  bits . . . . . . . . . . . . . . . .  MEMBER   -----  STRUCT   0000H  2
+  value. . . . . . . . . . . . . . . .  MEMBER   -----  U_INT    0000H  2
+ES . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00ACH  1
+RI . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0098H  1
+INT0 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B2H  1
+CY . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D7H  1
+_D12_SetMode . . . . . . . . . . . . .  EXTERN   CODE   PROC     -----  -----
+TI . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0099H  1
+INT1 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B3H  1
+PS . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BCH  1
+IO_REQUEST . . . . . . . . . . . . . .  TYPEDEF  -----  STRUCT   -----  6
+  uAddressL. . . . . . . . . . . . . .  MEMBER   -----  U_INT    0000H  2
+  bAddressH. . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0002H  1
+  uSize. . . . . . . . . . . . . . . .  MEMBER   -----  U_INT    0003H  2
+  bCommand . . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0005H  1
+OV . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D2H  1
+WR . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B6H  1
+_D12_ReadEndpoint. . . . . . . . . . .  EXTERN   CODE   PROC     -----  -----
+_rom_addr. . . . . . . . . . . . . . .  * TAG *  -----  UNION    -----  2
+  byte . . . . . . . . . . . . . . . .  MEMBER   -----  STRUCT   0000H  2
+  word . . . . . . . . . . . . . . . .  MEMBER   -----  U_INT    0000H  2
+BOOL . . . . . . . . . . . . . . . . .  TYPEDEF  -----  U_CHAR   -----  1
+Readlens . . . . . . . . . . . . . . .  PUBLIC   XDATA  U_CHAR   0000H  1
+VendorDeviceRequest. . . . . . . . . .  PUBLIC   CODE   ARRAY    0000H  48
+D12SUSPD . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B3H  1
+connect_USB. . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+CONTROL_XFER . . . . . . . . . . . . .  TYPEDEF  -----  STRUCT   -----  23
+  DeviceRequest. . . . . . . . . . . .  MEMBER   -----  STRUCT   0000H  8
+  wLength. . . . . . . . . . . . . . .  MEMBER   -----  U_INT    0008H  2
+  wCount . . . . . . . . . . . . . . .  MEMBER   -----  U_INT    000AH  2
+  pData. . . . . . . . . . . . . . . .  MEMBER   -----  PTR      000CH  3
+  dataBuffer . . . . . . . . . . . . .  MEMBER   -----  ARRAY    000FH  8
+IE0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0089H  1
+DEVICE_REQUEST . . . . . . . . . . . .  TYPEDEF  -----  STRUCT   -----  8
+  bmRequestType. . . . . . . . . . . .  MEMBER   -----  U_CHAR   0000H  1
+C51 COMPILER V6.14  ISR                                                                    11/25/2005 10:10:41 PAGE 15  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+  bRequest . . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0001H  1
+  wValue . . . . . . . . . . . . . . .  MEMBER   -----  U_INT    0002H  2
+  wIndex . . . . . . . . . . . . . . .  MEMBER   -----  U_INT    0004H  2
+  wLength. . . . . . . . . . . . . . .  MEMBER   -----  U_INT    0006H  2
+IE1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008BH  1
+_device_request. . . . . . . . . . . .  * TAG *  -----  STRUCT   -----  8
+  bmRequestType. . . . . . . . . . . .  MEMBER   -----  U_CHAR   0000H  1
+  bRequest . . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0001H  1
+  wValue . . . . . . . . . . . . . . .  MEMBER   -----  U_INT    0002H  2
+  wIndex . . . . . . . . . . . . . . .  MEMBER   -----  U_INT    0004H  2
+  wLength. . . . . . . . . . . . . . .  MEMBER   -----  U_INT    0006H  2
+ioRequest. . . . . . . . . . . . . . .  PUBLIC   IDATA  STRUCT   0000H  6
+ET0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A9H  1
+ET1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00ABH  1
+TF0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008DH  1
+TF1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008FH  1
+RB8. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009AH  1
+rom_addr . . . . . . . . . . . . . . .  TYPEDEF  -----  UNION    -----  2
+  byte . . . . . . . . . . . . . . . .  MEMBER   -----  STRUCT   0000H  2
+  word . . . . . . . . . . . . . . . .  MEMBER   -----  U_INT    0000H  2
+EX0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A8H  1
+IT0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0088H  1
+TB8. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009BH  1
+EX1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00AAH  1
+IT1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008AH  1
+P. . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D0H  1
+SM0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009FH  1
+SM1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009EH  1
+bus_reset. . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+SM2. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009DH  1
+EpBuf. . . . . . . . . . . . . . . . .  PUBLIC   IDATA  ARRAY    0006H  64
+PT0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B9H  1
+EPPFLAGS . . . . . . . . . . . . . . .  TYPEDEF  -----  UNION    -----  2
+  bits . . . . . . . . . . . . . . . .  MEMBER   -----  STRUCT   0000H  2
+  value. . . . . . . . . . . . . . . .  MEMBER   -----  U_INT    0000H  2
+PT1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BBH  1
+RS0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D3H  1
+TR0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008CH  1
+RS1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D4H  1
+TR1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008EH  1
+PX0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B8H  1
+bEPPflags. . . . . . . . . . . . . . .  PUBLIC   XDATA  UNION    0001H  2
+PX1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BAH  1
+dma_eot. . . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+ControlData. . . . . . . . . . . . . .  PUBLIC   XDATA  STRUCT   0003H  23
+reserved . . . . . . . . . . . . . . .  EXTERN   CODE   PROC     -----  -----
+REN. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009CH  1
+USHORT . . . . . . . . . . . . . . . .  TYPEDEF  -----  U_INT    -----  2
+_D12_SetDMA. . . . . . . . . . . . . .  EXTERN   CODE   PROC     -----  -----
+MCU_D12RST . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0097H  1
+sendover . . . . . . . . . . . . . . .  EXTERN   DATA   CHAR     -----  1
+RXD. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B0H  1
+_flags . . . . . . . . . . . . . . . .  * TAG *  -----  STRUCT   -----  2
+  timer. . . . . . . . . . . . . . . .  MEMBER   -----  FIELD    0000H  1.0
+  bus_reset. . . . . . . . . . . . . .  MEMBER   -----  FIELD    0000H  1.1
+  suspend. . . . . . . . . . . . . . .  MEMBER   -----  FIELD    0000H  1.2
+  setup_packet . . . . . . . . . . . .  MEMBER   -----  FIELD    0000H  1.3
+C51 COMPILER V6.14  ISR                                                                    11/25/2005 10:10:41 PAGE 16  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+  remote_wakeup. . . . . . . . . . . .  MEMBER   -----  FIELD    0000H  1.4
+  in_isr . . . . . . . . . . . . . . .  MEMBER   -----  FIELD    0000H  1.5
+  control_state. . . . . . . . . . . .  MEMBER   -----  FIELD    0000H  2.6
+  configuration. . . . . . . . . . . .  MEMBER   -----  FIELD    0001H  1.0
+  command. . . . . . . . . . . . . . .  MEMBER   -----  FIELD    0001H  1.1
+  ep1_rxdone . . . . . . . . . . . . .  MEMBER   -----  FIELD    0001H  1.2
+  ep2_rxdone . . . . . . . . . . . . .  MEMBER   -----  FIELD    0001H  1.3
+GenEpBuf . . . . . . . . . . . . . . .  PUBLIC   IDATA  ARRAY    0046H  4
+TXD. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B1H  1
+UCHAR. . . . . . . . . . . . . . . . .  TYPEDEF  -----  U_CHAR   -----  1
+PIO_REQUEST. . . . . . . . . . . . . .  TYPEDEF  -----  PTR      -----  3
+F0 . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D5H  1
+read_write_register. . . . . . . . . .  EXTERN   CODE   PROC     -----  -----
+ep1_rxdone . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  len. . . . . . . . . . . . . . . . .  * REG *  DATA   U_CHAR   0007H  1
+ep2_rxdone . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+disconnect_USB . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+ep1_txdone . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+_control_xfer. . . . . . . . . . . . .  * TAG *  -----  STRUCT   -----  23
+  DeviceRequest. . . . . . . . . . . .  MEMBER   -----  STRUCT   0000H  8
+  wLength. . . . . . . . . . . . . . .  MEMBER   -----  U_INT    0008H  2
+  wCount . . . . . . . . . . . . . . .  MEMBER   -----  U_INT    000AH  2
+  pData. . . . . . . . . . . . . . . .  MEMBER   -----  PTR      000CH  3
+  dataBuffer . . . . . . . . . . . . .  MEMBER   -----  ARRAY    000FH  8
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    179    ----
+   CONSTANT SIZE    =     48    ----
+   XDATA SIZE       =     26       4
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =     74    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

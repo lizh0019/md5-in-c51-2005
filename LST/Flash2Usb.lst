@@ -1,0 +1,68 @@
+A51 MACRO ASSEMBLER  FLASH2USB                                                            12/01/2005 09:47:06 PAGE     1
+
+
+MACRO ASSEMBLER A51 V6.14
+OBJECT MODULE PLACED IN .\OUT\Flash2Usb.obj
+ASSEMBLER INVOKED BY: c:\Keil\C51\BIN\A51.EXE .\Flash2Usb.A51 SET(COMPACT) DEBUG PRINT(.\LST\Flash2Usb.lst) OBJECT(.\OUT
+                      \Flash2Usb.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     NAME flash_to_usb
+                       2     
+                       3     EXTRN XDATA (windbuf)
+                       4     
+                       5     PUBLIC Flash2Usb
+*** ________________________________^
+*** ERROR #A45 IN 5 (.\Flash2Usb.A51, LINE 5): UNDEFINED SYMBOL (PASS-2)
+                       6     ;PUBLIC SpareUsb
+                       7     PUBLIC ep2_txdone
+                       8     ;PUBLIC Send_Ecc
+                       9     
+                      10     ;PUBLIC sendover
+                      11     
+                      12     
+                      13     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      14     ;data_seg1   SEGMENT DATA
+                      15     ;                       RSEG data_seg1
+                      16     
+                      17     ;sendover:   DS 1
+                      18     
+                      19     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      20     ;code_seg    SEGMENT CODE
+                      21     ;                       RSEG code_seg
+                      22     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                      23     
+                      24     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0000 7445             25     ep2_txdone:             mov a, #45h
+0002 90FF03           26                             mov dptr, #0ff03h
+0005 F0               27                             movx @dptr, a
+0006 1582             28                             dec dpl
+0008 E0               29                             movx a, @dptr
+0009                  30                             mov  sendover, #1
+*** ______________________________________________________^
+*** ERROR #A45 IN 30 (.\Flash2Usb.A51, LINE 30): UNDEFINED SYMBOL (PASS-2)
+000C 22               31                             ret
+                      32     
+                      33     END
+                             
+A51 MACRO ASSEMBLER  FLASH2USB                                                            12/01/2005 09:47:06 PAGE     2
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+DPL. . . . . . . .  D ADDR   0082H   A   
+EP2_TXDONE . . . .  C ADDR   0000H   A   
+FLASH2USB. . . . .    ----   -----       
+FLASH_TO_USB . . .  N NUMB   -----       
+SENDOVER . . . . .    ----   -----       
+WINDBUF. . . . . .  X ADDR   -----       EXT
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 2 ERROR(S)

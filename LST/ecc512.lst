@@ -1,0 +1,4147 @@
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 1   
+
+
+C51 COMPILER V6.14, COMPILATION OF MODULE ECC512
+OBJECT MODULE PLACED IN .\OUT\ecc512.obj
+COMPILER INVOKED BY: c:\Keil\C51\BIN\C51.EXE .\ecc512.c BROWSE DEBUG OBJECTEXTEND CODE LISTINCLUDE SYMBOLS PRINT(.\LST\e
+                    -cc512.lst) OBJECT(.\OUT\ecc512.obj) 
+
+stmt level    source
+
+   1          /*****************************************************************************/
+   2          /*                                                                           */
+   3          /* PROJECT : SAMSUNG ECC                                                     */
+   4          /* FILE    : SAMSUNG_ECC.c                                                   */
+   5          /* PURPOSE : This file implements core ECC algorithms adopted				 */
+   6          /*           Hamming Error Correction and Detection Algorithm                */
+   7          /*                                                                           */
+   8          /*---------------------------------------------------------------------------*/
+   9          /*                                                                           */
+  10          /*        COPYRIGHT 2000-2004, SAMSUNG ELECTRONICS CO., LTD.                 */
+  11          /*                      ALL RIGHTS RESERVED                                  */
+  12          /*                                                                           */
+  13          /*   Permission is hereby granted to licensees of Samsung Electronics        */
+  14          /*   Co., Ltd. products to use or abstract this computer program for the     */
+  15          /*   sole purpose of implementing a product based on Samsung                 */
+  16          /*   Electronics Co., Ltd. products. No other rights to reproduce, use,      */
+  17          /*   or disseminate this computer program, whether in part or in whole,      */
+  18          /*   are granted.                                                            */
+  19          /*                                                                           */
+  20          /*   Samsung Electronics Co., Ltd. makes no representation or warranties     */
+  21          /*   with respect to the performance of this computer program, and           */
+  22          /*   specifically disclaims any responsibility for any damages,              */
+  23          /*   special or consequential, connected with the use of this program.       */
+  24          /*                                                                           */
+  25          /*---------------------------------------------------------------------------*/
+  26          /*                                                                           */
+  27          /* REVISION HISTORY                                                          */
+  28          /*                                                                           */
+  29          /*  13-NOV-2003 [Chang JongBaek] : 	first writing                            */
+  30          /*  03-MAR-2004 [ Kim YoungGon ] :  Second writing                           */
+  31          /*  03-MAR-2004 [  Lee JaeBum  ] :  Third writing                            */
+  32          /*---------------------------------------------------------------------------*/
+  33          /*                                                                           */
+  34          /* NOTES                                                                     */
+  35          /*                                                                           */
+  36          /* - Make ECC parity code of 512bytes(256words) and 3 bytes are represented  */
+  37          /*   And ECC compare & Correction code is also represented                   */
+  38          /*                                                                           */
+  39          /*****************************************************************************/
+  40          //#include <stdio.h>
+  41          //#include <conio.h>
+  42          //#include <stdlib.h>
+  43          //#include <string.h>
+  44          #include "ecc512.h"
+   1      =1  /*****************************************************************************/
+   2      =1  /* Address Types                                                             */
+   3      =1  /*****************************************************************************/
+   4      =1  
+   5      =1  //typedef unsigned char *		address_t;			/* address (pointer) */
+   6      =1  //typedef unsigned long		address_value_t;	/* address (for calculation) */
+   7      =1  
+   8      =1  /*****************************************************************************/
+   9      =1  /* Integer Types                                                             */
+  10      =1  /*****************************************************************************/
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 2   
+
+  11      =1  
+  12      =1  typedef unsigned long		uint32_t;			/* unsigned 4 byte integer */
+  13      =1  typedef signed long			int32_t;			/* signed 4 byte integer */
+  14      =1  typedef unsigned short		uint16_t;			/* unsigned 2 byte integer */
+  15      =1  typedef signed short		int16_t;			/* signed 2 byte integer */
+  16      =1  typedef unsigned char		uint8_t;			/* unsigned 1 byte integer */
+  17      =1  typedef signed char			int8_t;				/* signed 1 byte integer */
+  18      =1  
+  19      =1  typedef enum {
+  20      =1  	ECC_NO_ERROR			= 0,		/* no error */
+  21      =1  	ECC_CORRECTABLE_ERROR	= 1,		/* one bit data error */
+  22      =1  	ECC_ECC_ERROR			= 2,		/* one bit ECC error */
+  23      =1  	ECC_UNCORRECTABLE_ERROR	= 3			/* uncorrectable error */
+  24      =1  } eccdiff_t;
+  25      =1  
+  26      =1  
+  27      =1  extern void make_ecc_512(uint8_t xdata *ecc_buf, uint8_t xdata *data_buf);
+  28      =1  //eccdiff_t compare_ecc_512(uint8_t *iEccdata1, uint8_t *iEccdata2,
+  29      =1  //				uint8_t *pPagedata, int32_t pOffset, uint8_t pCorrected);
+  45          
+  46          
+  47          
+  48          
+  49          /*****************************************************************************/
+  50          /*                                                                           */
+  51          /* NAME                                                                      */
+  52          /*		make_ecc_512                                                         */
+  53          /* DESCRIPTION                                                               */
+  54          /*		This function generates 3 byte ECC for 512 byte data.                */
+  55          /*      (Software ECC)                                                       */
+  56          /* PARAMETERS                                                                */
+  57          /*		ecc_buf			the location where ECC should be stored              */
+  58          /*		data_buf		given data                                           */
+  59          /* RETURN VALUES                                                             */
+  60          /*		none                                                                 */
+  61          /*                                                                           */
+  62          /*****************************************************************************/
+  63          
+  64          void make_ecc_512(uint8_t xdata *ecc_buf, uint8_t xdata *data_buf)
+  65          {
+  66   1      	
+  67   1          uint32_t xdata	i, ALIGN_FACTOR; 
+  68   1      
+  69   1         	uint32_t pdata	tmp;
+  70   1      	uint32_t pdata	uiparity = 0;
+  71   1      	uint32_t pdata	parityCol, ecc = 0;
+  72   1      	uint32_t pdata	parityCol4321 = 0, parityCol4343 = 0, parityCol4242 = 0, parityColTot = 0;
+  73   1      	uint32_t pdata	*Data;
+  74   1      
+  75   1      	uint32_t pdata	Xorbit=0;
+  76   1      
+  77   1      	ALIGN_FACTOR = (uint32_t)data_buf % 4 ;
+  78   1      	Data = (uint32_t *)(data_buf + ALIGN_FACTOR);
+  79   1      
+  80   1      	for( i = 0; i < 16; i++)
+  81   1      	{
+  82   2      		parityCol = *Data++; 
+  83   2      		tmp = *Data++; parityCol ^= tmp; parityCol4242 ^= tmp;
+  84   2      		tmp = *Data++; parityCol ^= tmp; parityCol4343 ^= tmp;
+  85   2      		tmp = *Data++; parityCol ^= tmp; parityCol4343 ^= tmp; parityCol4242 ^= tmp;
+  86   2      		tmp = *Data++; parityCol ^= tmp; parityCol4321 ^= tmp;
+  87   2      		tmp = *Data++; parityCol ^= tmp; parityCol4242 ^= tmp; parityCol4321 ^= tmp;
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 3   
+
+  88   2      		tmp = *Data++; parityCol ^= tmp; parityCol4343 ^= tmp; parityCol4321 ^= tmp;
+  89   2      		tmp = *Data++; parityCol ^= tmp; parityCol4242 ^= tmp; parityCol4343 ^= tmp; parityCol4321 ^= tmp;
+  90   2      
+  91   2      		parityColTot ^= parityCol;
+  92   2      
+  93   2      		tmp = (parityCol >> 16) ^ parityCol;
+  94   2      		tmp = (tmp >> 8) ^ tmp;
+  95   2      
+  96   2      		tmp = (tmp >> 4) ^ tmp;
+  97   2      
+  98   2      		tmp = ((tmp >> 2) ^ tmp) & 0x03;
+  99   2      		if ((tmp == 0x01) || (tmp == 0x02))
+ 100   2      		{
+ 101   3      			uiparity ^= i;
+ 102   3      			Xorbit ^= 0x01;
+ 103   3      		}
+ 104   2      
+ 105   2      	}
+ 106   1      
+ 107   1      	tmp = (parityCol4321 >> 16) ^ parityCol4321;
+ 108   1      	tmp = (tmp << 8) ^ tmp;
+ 109   1      	tmp = (tmp >> 4) ^ tmp;
+ 110   1      	tmp = (tmp >> 2) ^ tmp;
+ 111   1      	ecc |= ((tmp << 1) ^ tmp) & 0x200;	// p128
+ 112   1      
+ 113   1      
+ 114   1      	tmp = (parityCol4343 >> 16) ^ parityCol4343;
+ 115   1      	tmp = (tmp >> 8) ^ tmp;
+ 116   1      	tmp = (tmp << 4) ^ tmp;
+ 117   1      	tmp = (tmp << 2) ^ tmp;
+ 118   1      	ecc |= ((tmp << 1) ^ tmp) & 0x80;	// p64
+ 119   1      
+ 120   1      
+ 121   1      	tmp = (parityCol4242 >> 16) ^ parityCol4242;
+ 122   1      	tmp = (tmp >> 8) ^ tmp;
+ 123   1      	tmp = (tmp << 4) ^ tmp;
+ 124   1      	tmp = (tmp >> 2) ^ tmp;
+ 125   1      	ecc |= ((tmp << 1) ^ tmp) & 0x20;	// p32
+ 126   1      
+ 127   1      
+ 128   1      	tmp = parityColTot & 0xFFFF0000;
+ 129   1      	tmp = tmp >> 16;
+ 130   1      	tmp = (tmp >> 8) ^ tmp;
+ 131   1      	tmp = (tmp >> 4) ^ tmp;
+ 132   1      	tmp = (tmp << 2) ^ tmp;
+ 133   1      	ecc |= ((tmp << 1) ^ tmp) & 0x08;	// p16
+ 134   1      
+ 135   1      
+ 136   1      	tmp = parityColTot & 0xFF00FF00;
+ 137   1      	tmp = (tmp >> 16) ^ tmp;
+ 138   1      	tmp = (tmp >> 8);
+ 139   1      	tmp = (tmp >> 4) ^ tmp;
+ 140   1      	tmp = (tmp >> 2) ^ tmp;
+ 141   1      	ecc |= ((tmp << 1) ^ tmp) & 0x02;	// p8
+ 142   1      
+ 143   1      
+ 144   1      	tmp = parityColTot & 0xF0F0F0F0 ;
+ 145   1      	tmp = (tmp << 16) ^ tmp;
+ 146   1      	tmp = (tmp >> 8) ^ tmp;
+ 147   1      	tmp = (tmp << 2) ^ tmp;
+ 148   1      	ecc |= ((tmp << 1) ^ tmp) & 0x800000;	// p4
+ 149   1      
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 4   
+
+ 150   1      
+ 151   1      	tmp = parityColTot & 0xCCCCCCCC ;
+ 152   1      	tmp = (tmp << 16) ^ tmp;
+ 153   1      	tmp = (tmp >> 8) ^ tmp;
+ 154   1      	tmp = (tmp << 4) ^ tmp;
+ 155   1      	tmp = (tmp >> 2);
+ 156   1      	ecc |= ((tmp << 1) ^ tmp) & 0x200000;	// p2
+ 157   1      
+ 158   1      
+ 159   1      	tmp = parityColTot & 0xAAAAAAAA ;
+ 160   1      	tmp = (tmp << 16) ^ tmp;
+ 161   1      	tmp = (tmp >> 8) ^ tmp;
+ 162   1      	tmp = (tmp >> 4) ^ tmp;
+ 163   1      	tmp = (tmp << 2) ^ tmp;
+ 164   1      	ecc |= (tmp & 0x80000);	// p1
+ 165   1      
+ 166   1      	ecc |= (uiparity & 0x01) <<11;	
+ 167   1      	ecc |= (uiparity & 0x02) <<12;	
+ 168   1      	ecc |= (uiparity & 0x04) <<13;
+ 169   1      	ecc |= (uiparity & 0x08) <<14;
+ 170   1      
+ 171   1      	if (Xorbit)
+ 172   1      	{
+ 173   2      		ecc |= (ecc ^ 0x00AAAAAA)>>1;
+ 174   2      	}
+ 175   1      	else
+ 176   1      	{
+ 177   2      		ecc |= (ecc >> 1);
+ 178   2      	}
+ 179   1      
+ 180   1      	ecc = ~ecc;
+ 181   1      	*(ecc_buf + 2) = (uint8_t) (ecc >> 16);
+ 182   1      	*(ecc_buf + 1) = (uint8_t) (ecc >> 8);
+ 183   1      	*(ecc_buf + 0) = (uint8_t) (ecc);
+ 184   1      
+ 185   1      }
+ 186          
+ 187          /*****************************************************************************/
+ 188          /*                                                                           */
+ 189          /* NAME                                                                      */
+ 190          /*		compare_ecc_512                                                      */
+ 191          /* DESCRIPTION                                                               */
+ 192          /*		This function compares two ECCs and indicates if there is an error.  */
+ 193          /* PARAMETERS                                                                */
+ 194          /*		ecc_data1		one ECC to be compared                               */
+ 195          /*		ecc_data2		the other ECC to be compared                         */
+ 196          /*		page_data		content of data page                                 */
+ 197          /*		offset			where the error occurred                             */
+ 198          /*		corrected		correct data                                         */
+ 199          /* RETURN VALUES                                                             */
+ 200          /*		Upon successful completion, compare_ecc returns SSR_SUCCESS.         */
+ 201          /*      Otherwise, corresponding error code is returned.                     */
+ 202          /*                                                                           */
+ 203          /*****************************************************************************/
+ 204          
+ 205          
+ 206          /*
+ 207          eccdiff_t compare_ecc_512(uint8_t *iEccdata1, uint8_t *iEccdata2, 
+ 208                    uint8_t *pPagedata, int32_t pOffset, uint8_t pCorrected)
+ 209          {
+ 210          
+ 211          	uint32_t  iCompecc = 0, iEccsum = 0;
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 5   
+
+ 212              uint32_t  iFindbyte   = 0;
+ 213              uint32_t  iIndex;
+ 214              uint32_t  nT1 = 0, nT2 =0;
+ 215          
+ 216          
+ 217          	uint8_t   iNewvalue;
+ 218              uint8_t   iFindbit    = 0;
+ 219          
+ 220              uint8_t   *pEcc1 = (uint8_t *)iEccdata1;
+ 221              uint8_t   *pEcc2 = (uint8_t *)iEccdata2;
+ 222          
+ 223          	for ( iIndex = 0; iIndex <2; iIndex++)
+ 224              {
+ 225                  nT1 ^= (((*pEcc1) >> iIndex) & 0x01);
+ 226                  nT2 ^= (((*pEcc2) >> iIndex) & 0x01);
+ 227              }
+ 228          
+ 229              for (iIndex = 0; iIndex < 3; iIndex++)
+ 230                  iCompecc |= ((~(*pEcc1++) ^ ~(*pEcc2++)) << iIndex * 8);
+ 231              
+ 232              for(iIndex = 0; iIndex < 24; iIndex++) {
+ 233                  iEccsum += ((iCompecc >> iIndex) & 0x01);
+ 234              }
+ 235          
+ 236              
+ 237              switch (iEccsum) {
+ 238              case 0 :
+ 239          		printf("RESULT : no error\n");
+ 240                  return ECC_NO_ERROR;
+ 241          
+ 242          	case 1 :
+ 243          		printf("RESULT : ECC code 1 bit fail\n");
+ 244                  return ECC_ECC_ERROR;
+ 245          
+ 246              case 12 :
+ 247                  if (nT1 != nT2)
+ 248                  {
+ 249          
+ 250                      iFindbyte = ((iCompecc >> 17 & 1) << 8) + ((iCompecc >> 15 & 1) << 7) + ((iCompecc >> 13 & 1) 
+             -<< 6)
+ 251                                + ((iCompecc >> 11 & 1) << 5) + ((iCompecc >> 9 & 1) << 4) + ((iCompecc >> 7 & 1) <<
+             - 3)
+ 252                                + ((iCompecc >> 5 & 1) << 2) + ((iCompecc >> 3 & 1) << 1) + (iCompecc >> 1 & 1);
+ 253                      iFindbit =  (uint8_t)(((iCompecc >> 23 & 1) << 2) + ((iCompecc >> 21 & 1) << 1) + (iCompecc >>
+             - 19 & 1));
+ 254                      iNewvalue = (uint8_t)(pPagedata[iFindbyte] ^ (1 << iFindbit));
+ 255          			printf("iCompecc = %d\n",iCompecc);
+ 256                      printf("RESULT : one bit error\r\n");
+ 257                      printf("byte = %d, bit = %d\r\n", iFindbyte, iFindbit);
+ 258                      printf("corrupted = %x, corrected = %x\r\n", pPagedata[iFindbyte], iNewvalue);
+ 259          
+ 260                      //if (pOffset != NULL) {
+ 261          			if(pOffset != 0){
+ 262                          pOffset = iFindbyte;
+ 263                      }
+ 264                      //if (pCorrected != NULL) {
+ 265          			if(pCorrected != 0){
+ 266                          pCorrected = iNewvalue;
+ 267                      }
+ 268                      
+ 269                      return ECC_CORRECTABLE_ERROR;
+ 270                  }
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 6   
+
+ 271                  else
+ 272                      return ECC_UNCORRECTABLE_ERROR;
+ 273          
+ 274              default :
+ 275          		printf("RESULT : unrecoverable error\n");
+ 276                  return ECC_UNCORRECTABLE_ERROR;
+ 277              }   
+ 278          }
+ 279          */
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 7   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION _make_ecc_512 (BEGIN)
+                                           ; SOURCE LINE # 64
+0000 8E00        R     MOV     ecc_buf,R6
+0002 8F00        R     MOV     ecc_buf+01H,R7
+;---- Variable 'data_buf' assigned to Register 'R2/R3' ----
+0004 AB05              MOV     R3,AR5
+0006 AA04              MOV     R2,AR4
+                                           ; SOURCE LINE # 65
+                                           ; SOURCE LINE # 70
+0008 7800        R     MOV     R0,#LOW uiparity
+000A 120000      E     LCALL   ?C?LSTKPDATA
+000D 00                DB      00H
+000E 00                DB      00H
+000F 00                DB      00H
+0010 00                DB      00H
+                                           ; SOURCE LINE # 71
+0011 7800        R     MOV     R0,#LOW ecc
+0013 120000      E     LCALL   ?C?LSTKPDATA
+0016 00                DB      00H
+0017 00                DB      00H
+0018 00                DB      00H
+0019 00                DB      00H
+                                           ; SOURCE LINE # 72
+001A 7800        R     MOV     R0,#LOW parityCol4321
+001C 120000      E     LCALL   ?C?LSTKPDATA
+001F 00                DB      00H
+0020 00                DB      00H
+0021 00                DB      00H
+0022 00                DB      00H
+0023 7800        R     MOV     R0,#LOW parityCol4343
+0025 120000      E     LCALL   ?C?LSTKPDATA
+0028 00                DB      00H
+0029 00                DB      00H
+002A 00                DB      00H
+002B 00                DB      00H
+002C 7800        R     MOV     R0,#LOW parityCol4242
+002E 120000      E     LCALL   ?C?LSTKPDATA
+0031 00                DB      00H
+0032 00                DB      00H
+0033 00                DB      00H
+0034 00                DB      00H
+0035 7800        R     MOV     R0,#LOW parityColTot
+0037 120000      E     LCALL   ?C?LSTKPDATA
+003A 00                DB      00H
+003B 00                DB      00H
+003C 00                DB      00H
+003D 00                DB      00H
+                                           ; SOURCE LINE # 75
+003E 7800        R     MOV     R0,#LOW Xorbit
+0040 120000      E     LCALL   ?C?LSTKPDATA
+0043 00                DB      00H
+0044 00                DB      00H
+0045 00                DB      00H
+0046 00                DB      00H
+                                           ; SOURCE LINE # 77
+0047 E4                CLR     A
+0048 FC                MOV     R4,A
+0049 FD                MOV     R5,A
+004A EB                MOV     A,R3
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 8   
+
+004B 5403              ANL     A,#03H
+004D FF                MOV     R7,A
+004E E4                CLR     A
+004F FE                MOV     R6,A
+0050 900000      R     MOV     DPTR,#ALIGN_FACTOR
+0053 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 78
+0056 900000      R     MOV     DPTR,#ALIGN_FACTOR+02H
+0059 E0                MOVX    A,@DPTR
+005A FE                MOV     R6,A
+005B A3                INC     DPTR
+005C E0                MOVX    A,@DPTR
+005D 2B                ADD     A,R3
+005E FF                MOV     R7,A
+005F EE                MOV     A,R6
+0060 3A                ADDC    A,R2
+0061 8F00        R     MOV     Data,R7
+                                           ; SOURCE LINE # 80
+0063 900000      R     MOV     DPTR,#i
+0066 120000      E     LCALL   ?C?LSTKXDATA
+0069 00                DB      00H
+006A 00                DB      00H
+006B 00                DB      00H
+006C 00                DB      00H
+006D         ?C0001:
+006D E4                CLR     A
+006E 7F10              MOV     R7,#010H
+0070 FE                MOV     R6,A
+0071 FD                MOV     R5,A
+0072 FC                MOV     R4,A
+0073 900000      R     MOV     DPTR,#i
+0076 E0                MOVX    A,@DPTR
+0077 F8                MOV     R0,A
+0078 A3                INC     DPTR
+0079 E0                MOVX    A,@DPTR
+007A F9                MOV     R1,A
+007B A3                INC     DPTR
+007C E0                MOVX    A,@DPTR
+007D FA                MOV     R2,A
+007E A3                INC     DPTR
+007F E0                MOVX    A,@DPTR
+0080 FB                MOV     R3,A
+0081 C3                CLR     C
+0082 120000      E     LCALL   ?C?ULCMP
+0085 4003              JC      $ + 5H
+0087 020000      R     LJMP    ?C0002
+                                           ; SOURCE LINE # 81
+                                           ; SOURCE LINE # 82
+008A E500        R     MOV     A,Data
+008C FF                MOV     R7,A
+008D 2404              ADD     A,#04H
+008F F500        R     MOV     Data,A
+0091 A807              MOV     R0,AR7
+0093 E2                MOVX    A,@R0
+0094 FC                MOV     R4,A
+0095 08                INC     R0
+0096 E2                MOVX    A,@R0
+0097 FD                MOV     R5,A
+0098 08                INC     R0
+0099 E2                MOVX    A,@R0
+009A FE                MOV     R6,A
+009B 08                INC     R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 9   
+
+009C E2                MOVX    A,@R0
+009D FF                MOV     R7,A
+009E 7800        R     MOV     R0,#LOW parityCol
+00A0 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 83
+00A3 E500        R     MOV     A,Data
+00A5 FF                MOV     R7,A
+00A6 2404              ADD     A,#04H
+00A8 F500        R     MOV     Data,A
+00AA A807              MOV     R0,AR7
+00AC E2                MOVX    A,@R0
+00AD FC                MOV     R4,A
+00AE 08                INC     R0
+00AF E2                MOVX    A,@R0
+00B0 FD                MOV     R5,A
+00B1 08                INC     R0
+00B2 E2                MOVX    A,@R0
+00B3 FE                MOV     R6,A
+00B4 08                INC     R0
+00B5 E2                MOVX    A,@R0
+00B6 FF                MOV     R7,A
+00B7 7800        R     MOV     R0,#LOW tmp
+00B9 120000      E     LCALL   ?C?LSTPDATA
+00BC 7800        R     MOV     R0,#LOW parityCol
+00BE E2                MOVX    A,@R0
+00BF FC                MOV     R4,A
+00C0 08                INC     R0
+00C1 E2                MOVX    A,@R0
+00C2 FD                MOV     R5,A
+00C3 08                INC     R0
+00C4 E2                MOVX    A,@R0
+00C5 FE                MOV     R6,A
+00C6 08                INC     R0
+00C7 E2                MOVX    A,@R0
+00C8 FF                MOV     R7,A
+00C9 7800        R     MOV     R0,#LOW tmp
+00CB E2                MOVX    A,@R0
+00CC FB                MOV     R3,A
+00CD 08                INC     R0
+00CE E2                MOVX    A,@R0
+00CF F9                MOV     R1,A
+00D0 08                INC     R0
+00D1 E2                MOVX    A,@R0
+00D2 FA                MOV     R2,A
+00D3 08                INC     R0
+00D4 E2                MOVX    A,@R0
+00D5 CB                XCH     A,R3
+00D6 F8                MOV     R0,A
+00D7 EF                MOV     A,R7
+00D8 6B                XRL     A,R3
+00D9 FF                MOV     R7,A
+00DA EE                MOV     A,R6
+00DB 6A                XRL     A,R2
+00DC FE                MOV     R6,A
+00DD ED                MOV     A,R5
+00DE 69                XRL     A,R1
+00DF FD                MOV     R5,A
+00E0 EC                MOV     A,R4
+00E1 68                XRL     A,R0
+00E2 FC                MOV     R4,A
+00E3 7800        R     MOV     R0,#LOW parityCol
+00E5 120000      E     LCALL   ?C?LSTPDATA
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 10  
+
+00E8 7800        R     MOV     R0,#LOW parityCol4242
+00EA E2                MOVX    A,@R0
+00EB FC                MOV     R4,A
+00EC 08                INC     R0
+00ED E2                MOVX    A,@R0
+00EE FD                MOV     R5,A
+00EF 08                INC     R0
+00F0 E2                MOVX    A,@R0
+00F1 FE                MOV     R6,A
+00F2 08                INC     R0
+00F3 E2                MOVX    A,@R0
+00F4 FF                MOV     R7,A
+00F5 7800        R     MOV     R0,#LOW tmp
+00F7 E2                MOVX    A,@R0
+00F8 FB                MOV     R3,A
+00F9 08                INC     R0
+00FA E2                MOVX    A,@R0
+00FB F9                MOV     R1,A
+00FC 08                INC     R0
+00FD E2                MOVX    A,@R0
+00FE FA                MOV     R2,A
+00FF 08                INC     R0
+0100 E2                MOVX    A,@R0
+0101 CB                XCH     A,R3
+0102 F8                MOV     R0,A
+0103 EF                MOV     A,R7
+0104 6B                XRL     A,R3
+0105 FF                MOV     R7,A
+0106 EE                MOV     A,R6
+0107 6A                XRL     A,R2
+0108 FE                MOV     R6,A
+0109 ED                MOV     A,R5
+010A 69                XRL     A,R1
+010B FD                MOV     R5,A
+010C EC                MOV     A,R4
+010D 68                XRL     A,R0
+010E FC                MOV     R4,A
+010F 7800        R     MOV     R0,#LOW parityCol4242
+0111 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 84
+0114 E500        R     MOV     A,Data
+0116 FF                MOV     R7,A
+0117 2404              ADD     A,#04H
+0119 F500        R     MOV     Data,A
+011B A807              MOV     R0,AR7
+011D E2                MOVX    A,@R0
+011E FC                MOV     R4,A
+011F 08                INC     R0
+0120 E2                MOVX    A,@R0
+0121 FD                MOV     R5,A
+0122 08                INC     R0
+0123 E2                MOVX    A,@R0
+0124 FE                MOV     R6,A
+0125 08                INC     R0
+0126 E2                MOVX    A,@R0
+0127 FF                MOV     R7,A
+0128 7800        R     MOV     R0,#LOW tmp
+012A 120000      E     LCALL   ?C?LSTPDATA
+012D 7800        R     MOV     R0,#LOW parityCol
+012F E2                MOVX    A,@R0
+0130 FC                MOV     R4,A
+0131 08                INC     R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 11  
+
+0132 E2                MOVX    A,@R0
+0133 FD                MOV     R5,A
+0134 08                INC     R0
+0135 E2                MOVX    A,@R0
+0136 FE                MOV     R6,A
+0137 08                INC     R0
+0138 E2                MOVX    A,@R0
+0139 FF                MOV     R7,A
+013A 7800        R     MOV     R0,#LOW tmp
+013C E2                MOVX    A,@R0
+013D FB                MOV     R3,A
+013E 08                INC     R0
+013F E2                MOVX    A,@R0
+0140 F9                MOV     R1,A
+0141 08                INC     R0
+0142 E2                MOVX    A,@R0
+0143 FA                MOV     R2,A
+0144 08                INC     R0
+0145 E2                MOVX    A,@R0
+0146 CB                XCH     A,R3
+0147 F8                MOV     R0,A
+0148 EF                MOV     A,R7
+0149 6B                XRL     A,R3
+014A FF                MOV     R7,A
+014B EE                MOV     A,R6
+014C 6A                XRL     A,R2
+014D FE                MOV     R6,A
+014E ED                MOV     A,R5
+014F 69                XRL     A,R1
+0150 FD                MOV     R5,A
+0151 EC                MOV     A,R4
+0152 68                XRL     A,R0
+0153 FC                MOV     R4,A
+0154 7800        R     MOV     R0,#LOW parityCol
+0156 120000      E     LCALL   ?C?LSTPDATA
+0159 7800        R     MOV     R0,#LOW parityCol4343
+015B E2                MOVX    A,@R0
+015C FC                MOV     R4,A
+015D 08                INC     R0
+015E E2                MOVX    A,@R0
+015F FD                MOV     R5,A
+0160 08                INC     R0
+0161 E2                MOVX    A,@R0
+0162 FE                MOV     R6,A
+0163 08                INC     R0
+0164 E2                MOVX    A,@R0
+0165 FF                MOV     R7,A
+0166 7800        R     MOV     R0,#LOW tmp
+0168 E2                MOVX    A,@R0
+0169 FB                MOV     R3,A
+016A 08                INC     R0
+016B E2                MOVX    A,@R0
+016C F9                MOV     R1,A
+016D 08                INC     R0
+016E E2                MOVX    A,@R0
+016F FA                MOV     R2,A
+0170 08                INC     R0
+0171 E2                MOVX    A,@R0
+0172 CB                XCH     A,R3
+0173 F8                MOV     R0,A
+0174 EF                MOV     A,R7
+0175 6B                XRL     A,R3
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 12  
+
+0176 FF                MOV     R7,A
+0177 EE                MOV     A,R6
+0178 6A                XRL     A,R2
+0179 FE                MOV     R6,A
+017A ED                MOV     A,R5
+017B 69                XRL     A,R1
+017C FD                MOV     R5,A
+017D EC                MOV     A,R4
+017E 68                XRL     A,R0
+017F FC                MOV     R4,A
+0180 7800        R     MOV     R0,#LOW parityCol4343
+0182 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 85
+0185 E500        R     MOV     A,Data
+0187 FF                MOV     R7,A
+0188 2404              ADD     A,#04H
+018A F500        R     MOV     Data,A
+018C A807              MOV     R0,AR7
+018E E2                MOVX    A,@R0
+018F FC                MOV     R4,A
+0190 08                INC     R0
+0191 E2                MOVX    A,@R0
+0192 FD                MOV     R5,A
+0193 08                INC     R0
+0194 E2                MOVX    A,@R0
+0195 FE                MOV     R6,A
+0196 08                INC     R0
+0197 E2                MOVX    A,@R0
+0198 FF                MOV     R7,A
+0199 7800        R     MOV     R0,#LOW tmp
+019B 120000      E     LCALL   ?C?LSTPDATA
+019E 7800        R     MOV     R0,#LOW parityCol
+01A0 E2                MOVX    A,@R0
+01A1 FC                MOV     R4,A
+01A2 08                INC     R0
+01A3 E2                MOVX    A,@R0
+01A4 FD                MOV     R5,A
+01A5 08                INC     R0
+01A6 E2                MOVX    A,@R0
+01A7 FE                MOV     R6,A
+01A8 08                INC     R0
+01A9 E2                MOVX    A,@R0
+01AA FF                MOV     R7,A
+01AB 7800        R     MOV     R0,#LOW tmp
+01AD E2                MOVX    A,@R0
+01AE FB                MOV     R3,A
+01AF 08                INC     R0
+01B0 E2                MOVX    A,@R0
+01B1 F9                MOV     R1,A
+01B2 08                INC     R0
+01B3 E2                MOVX    A,@R0
+01B4 FA                MOV     R2,A
+01B5 08                INC     R0
+01B6 E2                MOVX    A,@R0
+01B7 CB                XCH     A,R3
+01B8 F8                MOV     R0,A
+01B9 EF                MOV     A,R7
+01BA 6B                XRL     A,R3
+01BB FF                MOV     R7,A
+01BC EE                MOV     A,R6
+01BD 6A                XRL     A,R2
+01BE FE                MOV     R6,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 13  
+
+01BF ED                MOV     A,R5
+01C0 69                XRL     A,R1
+01C1 FD                MOV     R5,A
+01C2 EC                MOV     A,R4
+01C3 68                XRL     A,R0
+01C4 FC                MOV     R4,A
+01C5 7800        R     MOV     R0,#LOW parityCol
+01C7 120000      E     LCALL   ?C?LSTPDATA
+01CA 7800        R     MOV     R0,#LOW parityCol4343
+01CC E2                MOVX    A,@R0
+01CD FC                MOV     R4,A
+01CE 08                INC     R0
+01CF E2                MOVX    A,@R0
+01D0 FD                MOV     R5,A
+01D1 08                INC     R0
+01D2 E2                MOVX    A,@R0
+01D3 FE                MOV     R6,A
+01D4 08                INC     R0
+01D5 E2                MOVX    A,@R0
+01D6 FF                MOV     R7,A
+01D7 7800        R     MOV     R0,#LOW tmp
+01D9 E2                MOVX    A,@R0
+01DA FB                MOV     R3,A
+01DB 08                INC     R0
+01DC E2                MOVX    A,@R0
+01DD F9                MOV     R1,A
+01DE 08                INC     R0
+01DF E2                MOVX    A,@R0
+01E0 FA                MOV     R2,A
+01E1 08                INC     R0
+01E2 E2                MOVX    A,@R0
+01E3 CB                XCH     A,R3
+01E4 F8                MOV     R0,A
+01E5 EF                MOV     A,R7
+01E6 6B                XRL     A,R3
+01E7 FF                MOV     R7,A
+01E8 EE                MOV     A,R6
+01E9 6A                XRL     A,R2
+01EA FE                MOV     R6,A
+01EB ED                MOV     A,R5
+01EC 69                XRL     A,R1
+01ED FD                MOV     R5,A
+01EE EC                MOV     A,R4
+01EF 68                XRL     A,R0
+01F0 FC                MOV     R4,A
+01F1 7800        R     MOV     R0,#LOW parityCol4343
+01F3 120000      E     LCALL   ?C?LSTPDATA
+01F6 7800        R     MOV     R0,#LOW parityCol4242
+01F8 E2                MOVX    A,@R0
+01F9 FC                MOV     R4,A
+01FA 08                INC     R0
+01FB E2                MOVX    A,@R0
+01FC FD                MOV     R5,A
+01FD 08                INC     R0
+01FE E2                MOVX    A,@R0
+01FF FE                MOV     R6,A
+0200 08                INC     R0
+0201 E2                MOVX    A,@R0
+0202 FF                MOV     R7,A
+0203 7800        R     MOV     R0,#LOW tmp
+0205 E2                MOVX    A,@R0
+0206 FB                MOV     R3,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 14  
+
+0207 08                INC     R0
+0208 E2                MOVX    A,@R0
+0209 F9                MOV     R1,A
+020A 08                INC     R0
+020B E2                MOVX    A,@R0
+020C FA                MOV     R2,A
+020D 08                INC     R0
+020E E2                MOVX    A,@R0
+020F CB                XCH     A,R3
+0210 F8                MOV     R0,A
+0211 EF                MOV     A,R7
+0212 6B                XRL     A,R3
+0213 FF                MOV     R7,A
+0214 EE                MOV     A,R6
+0215 6A                XRL     A,R2
+0216 FE                MOV     R6,A
+0217 ED                MOV     A,R5
+0218 69                XRL     A,R1
+0219 FD                MOV     R5,A
+021A EC                MOV     A,R4
+021B 68                XRL     A,R0
+021C FC                MOV     R4,A
+021D 7800        R     MOV     R0,#LOW parityCol4242
+021F 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 86
+0222 E500        R     MOV     A,Data
+0224 FF                MOV     R7,A
+0225 2404              ADD     A,#04H
+0227 F500        R     MOV     Data,A
+0229 A807              MOV     R0,AR7
+022B E2                MOVX    A,@R0
+022C FC                MOV     R4,A
+022D 08                INC     R0
+022E E2                MOVX    A,@R0
+022F FD                MOV     R5,A
+0230 08                INC     R0
+0231 E2                MOVX    A,@R0
+0232 FE                MOV     R6,A
+0233 08                INC     R0
+0234 E2                MOVX    A,@R0
+0235 FF                MOV     R7,A
+0236 7800        R     MOV     R0,#LOW tmp
+0238 120000      E     LCALL   ?C?LSTPDATA
+023B 7800        R     MOV     R0,#LOW parityCol
+023D E2                MOVX    A,@R0
+023E FC                MOV     R4,A
+023F 08                INC     R0
+0240 E2                MOVX    A,@R0
+0241 FD                MOV     R5,A
+0242 08                INC     R0
+0243 E2                MOVX    A,@R0
+0244 FE                MOV     R6,A
+0245 08                INC     R0
+0246 E2                MOVX    A,@R0
+0247 FF                MOV     R7,A
+0248 7800        R     MOV     R0,#LOW tmp
+024A E2                MOVX    A,@R0
+024B FB                MOV     R3,A
+024C 08                INC     R0
+024D E2                MOVX    A,@R0
+024E F9                MOV     R1,A
+024F 08                INC     R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 15  
+
+0250 E2                MOVX    A,@R0
+0251 FA                MOV     R2,A
+0252 08                INC     R0
+0253 E2                MOVX    A,@R0
+0254 CB                XCH     A,R3
+0255 F8                MOV     R0,A
+0256 EF                MOV     A,R7
+0257 6B                XRL     A,R3
+0258 FF                MOV     R7,A
+0259 EE                MOV     A,R6
+025A 6A                XRL     A,R2
+025B FE                MOV     R6,A
+025C ED                MOV     A,R5
+025D 69                XRL     A,R1
+025E FD                MOV     R5,A
+025F EC                MOV     A,R4
+0260 68                XRL     A,R0
+0261 FC                MOV     R4,A
+0262 7800        R     MOV     R0,#LOW parityCol
+0264 120000      E     LCALL   ?C?LSTPDATA
+0267 7800        R     MOV     R0,#LOW parityCol4321
+0269 E2                MOVX    A,@R0
+026A FC                MOV     R4,A
+026B 08                INC     R0
+026C E2                MOVX    A,@R0
+026D FD                MOV     R5,A
+026E 08                INC     R0
+026F E2                MOVX    A,@R0
+0270 FE                MOV     R6,A
+0271 08                INC     R0
+0272 E2                MOVX    A,@R0
+0273 FF                MOV     R7,A
+0274 7800        R     MOV     R0,#LOW tmp
+0276 E2                MOVX    A,@R0
+0277 FB                MOV     R3,A
+0278 08                INC     R0
+0279 E2                MOVX    A,@R0
+027A F9                MOV     R1,A
+027B 08                INC     R0
+027C E2                MOVX    A,@R0
+027D FA                MOV     R2,A
+027E 08                INC     R0
+027F E2                MOVX    A,@R0
+0280 CB                XCH     A,R3
+0281 F8                MOV     R0,A
+0282 EF                MOV     A,R7
+0283 6B                XRL     A,R3
+0284 FF                MOV     R7,A
+0285 EE                MOV     A,R6
+0286 6A                XRL     A,R2
+0287 FE                MOV     R6,A
+0288 ED                MOV     A,R5
+0289 69                XRL     A,R1
+028A FD                MOV     R5,A
+028B EC                MOV     A,R4
+028C 68                XRL     A,R0
+028D FC                MOV     R4,A
+028E 7800        R     MOV     R0,#LOW parityCol4321
+0290 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 87
+0293 E500        R     MOV     A,Data
+0295 FF                MOV     R7,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 16  
+
+0296 2404              ADD     A,#04H
+0298 F500        R     MOV     Data,A
+029A A807              MOV     R0,AR7
+029C E2                MOVX    A,@R0
+029D FC                MOV     R4,A
+029E 08                INC     R0
+029F E2                MOVX    A,@R0
+02A0 FD                MOV     R5,A
+02A1 08                INC     R0
+02A2 E2                MOVX    A,@R0
+02A3 FE                MOV     R6,A
+02A4 08                INC     R0
+02A5 E2                MOVX    A,@R0
+02A6 FF                MOV     R7,A
+02A7 7800        R     MOV     R0,#LOW tmp
+02A9 120000      E     LCALL   ?C?LSTPDATA
+02AC 7800        R     MOV     R0,#LOW parityCol
+02AE E2                MOVX    A,@R0
+02AF FC                MOV     R4,A
+02B0 08                INC     R0
+02B1 E2                MOVX    A,@R0
+02B2 FD                MOV     R5,A
+02B3 08                INC     R0
+02B4 E2                MOVX    A,@R0
+02B5 FE                MOV     R6,A
+02B6 08                INC     R0
+02B7 E2                MOVX    A,@R0
+02B8 FF                MOV     R7,A
+02B9 7800        R     MOV     R0,#LOW tmp
+02BB E2                MOVX    A,@R0
+02BC FB                MOV     R3,A
+02BD 08                INC     R0
+02BE E2                MOVX    A,@R0
+02BF F9                MOV     R1,A
+02C0 08                INC     R0
+02C1 E2                MOVX    A,@R0
+02C2 FA                MOV     R2,A
+02C3 08                INC     R0
+02C4 E2                MOVX    A,@R0
+02C5 CB                XCH     A,R3
+02C6 F8                MOV     R0,A
+02C7 EF                MOV     A,R7
+02C8 6B                XRL     A,R3
+02C9 FF                MOV     R7,A
+02CA EE                MOV     A,R6
+02CB 6A                XRL     A,R2
+02CC FE                MOV     R6,A
+02CD ED                MOV     A,R5
+02CE 69                XRL     A,R1
+02CF FD                MOV     R5,A
+02D0 EC                MOV     A,R4
+02D1 68                XRL     A,R0
+02D2 FC                MOV     R4,A
+02D3 7800        R     MOV     R0,#LOW parityCol
+02D5 120000      E     LCALL   ?C?LSTPDATA
+02D8 7800        R     MOV     R0,#LOW parityCol4242
+02DA E2                MOVX    A,@R0
+02DB FC                MOV     R4,A
+02DC 08                INC     R0
+02DD E2                MOVX    A,@R0
+02DE FD                MOV     R5,A
+02DF 08                INC     R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 17  
+
+02E0 E2                MOVX    A,@R0
+02E1 FE                MOV     R6,A
+02E2 08                INC     R0
+02E3 E2                MOVX    A,@R0
+02E4 FF                MOV     R7,A
+02E5 7800        R     MOV     R0,#LOW tmp
+02E7 E2                MOVX    A,@R0
+02E8 FB                MOV     R3,A
+02E9 08                INC     R0
+02EA E2                MOVX    A,@R0
+02EB F9                MOV     R1,A
+02EC 08                INC     R0
+02ED E2                MOVX    A,@R0
+02EE FA                MOV     R2,A
+02EF 08                INC     R0
+02F0 E2                MOVX    A,@R0
+02F1 CB                XCH     A,R3
+02F2 F8                MOV     R0,A
+02F3 EF                MOV     A,R7
+02F4 6B                XRL     A,R3
+02F5 FF                MOV     R7,A
+02F6 EE                MOV     A,R6
+02F7 6A                XRL     A,R2
+02F8 FE                MOV     R6,A
+02F9 ED                MOV     A,R5
+02FA 69                XRL     A,R1
+02FB FD                MOV     R5,A
+02FC EC                MOV     A,R4
+02FD 68                XRL     A,R0
+02FE FC                MOV     R4,A
+02FF 7800        R     MOV     R0,#LOW parityCol4242
+0301 120000      E     LCALL   ?C?LSTPDATA
+0304 7800        R     MOV     R0,#LOW parityCol4321
+0306 E2                MOVX    A,@R0
+0307 FC                MOV     R4,A
+0308 08                INC     R0
+0309 E2                MOVX    A,@R0
+030A FD                MOV     R5,A
+030B 08                INC     R0
+030C E2                MOVX    A,@R0
+030D FE                MOV     R6,A
+030E 08                INC     R0
+030F E2                MOVX    A,@R0
+0310 FF                MOV     R7,A
+0311 7800        R     MOV     R0,#LOW tmp
+0313 E2                MOVX    A,@R0
+0314 FB                MOV     R3,A
+0315 08                INC     R0
+0316 E2                MOVX    A,@R0
+0317 F9                MOV     R1,A
+0318 08                INC     R0
+0319 E2                MOVX    A,@R0
+031A FA                MOV     R2,A
+031B 08                INC     R0
+031C E2                MOVX    A,@R0
+031D CB                XCH     A,R3
+031E F8                MOV     R0,A
+031F EF                MOV     A,R7
+0320 6B                XRL     A,R3
+0321 FF                MOV     R7,A
+0322 EE                MOV     A,R6
+0323 6A                XRL     A,R2
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 18  
+
+0324 FE                MOV     R6,A
+0325 ED                MOV     A,R5
+0326 69                XRL     A,R1
+0327 FD                MOV     R5,A
+0328 EC                MOV     A,R4
+0329 68                XRL     A,R0
+032A FC                MOV     R4,A
+032B 7800        R     MOV     R0,#LOW parityCol4321
+032D 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 88
+0330 E500        R     MOV     A,Data
+0332 FF                MOV     R7,A
+0333 2404              ADD     A,#04H
+0335 F500        R     MOV     Data,A
+0337 A807              MOV     R0,AR7
+0339 E2                MOVX    A,@R0
+033A FC                MOV     R4,A
+033B 08                INC     R0
+033C E2                MOVX    A,@R0
+033D FD                MOV     R5,A
+033E 08                INC     R0
+033F E2                MOVX    A,@R0
+0340 FE                MOV     R6,A
+0341 08                INC     R0
+0342 E2                MOVX    A,@R0
+0343 FF                MOV     R7,A
+0344 7800        R     MOV     R0,#LOW tmp
+0346 120000      E     LCALL   ?C?LSTPDATA
+0349 7800        R     MOV     R0,#LOW parityCol
+034B E2                MOVX    A,@R0
+034C FC                MOV     R4,A
+034D 08                INC     R0
+034E E2                MOVX    A,@R0
+034F FD                MOV     R5,A
+0350 08                INC     R0
+0351 E2                MOVX    A,@R0
+0352 FE                MOV     R6,A
+0353 08                INC     R0
+0354 E2                MOVX    A,@R0
+0355 FF                MOV     R7,A
+0356 7800        R     MOV     R0,#LOW tmp
+0358 E2                MOVX    A,@R0
+0359 FB                MOV     R3,A
+035A 08                INC     R0
+035B E2                MOVX    A,@R0
+035C F9                MOV     R1,A
+035D 08                INC     R0
+035E E2                MOVX    A,@R0
+035F FA                MOV     R2,A
+0360 08                INC     R0
+0361 E2                MOVX    A,@R0
+0362 CB                XCH     A,R3
+0363 F8                MOV     R0,A
+0364 EF                MOV     A,R7
+0365 6B                XRL     A,R3
+0366 FF                MOV     R7,A
+0367 EE                MOV     A,R6
+0368 6A                XRL     A,R2
+0369 FE                MOV     R6,A
+036A ED                MOV     A,R5
+036B 69                XRL     A,R1
+036C FD                MOV     R5,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 19  
+
+036D EC                MOV     A,R4
+036E 68                XRL     A,R0
+036F FC                MOV     R4,A
+0370 7800        R     MOV     R0,#LOW parityCol
+0372 120000      E     LCALL   ?C?LSTPDATA
+0375 7800        R     MOV     R0,#LOW parityCol4343
+0377 E2                MOVX    A,@R0
+0378 FC                MOV     R4,A
+0379 08                INC     R0
+037A E2                MOVX    A,@R0
+037B FD                MOV     R5,A
+037C 08                INC     R0
+037D E2                MOVX    A,@R0
+037E FE                MOV     R6,A
+037F 08                INC     R0
+0380 E2                MOVX    A,@R0
+0381 FF                MOV     R7,A
+0382 7800        R     MOV     R0,#LOW tmp
+0384 E2                MOVX    A,@R0
+0385 FB                MOV     R3,A
+0386 08                INC     R0
+0387 E2                MOVX    A,@R0
+0388 F9                MOV     R1,A
+0389 08                INC     R0
+038A E2                MOVX    A,@R0
+038B FA                MOV     R2,A
+038C 08                INC     R0
+038D E2                MOVX    A,@R0
+038E CB                XCH     A,R3
+038F F8                MOV     R0,A
+0390 EF                MOV     A,R7
+0391 6B                XRL     A,R3
+0392 FF                MOV     R7,A
+0393 EE                MOV     A,R6
+0394 6A                XRL     A,R2
+0395 FE                MOV     R6,A
+0396 ED                MOV     A,R5
+0397 69                XRL     A,R1
+0398 FD                MOV     R5,A
+0399 EC                MOV     A,R4
+039A 68                XRL     A,R0
+039B FC                MOV     R4,A
+039C 7800        R     MOV     R0,#LOW parityCol4343
+039E 120000      E     LCALL   ?C?LSTPDATA
+03A1 7800        R     MOV     R0,#LOW parityCol4321
+03A3 E2                MOVX    A,@R0
+03A4 FC                MOV     R4,A
+03A5 08                INC     R0
+03A6 E2                MOVX    A,@R0
+03A7 FD                MOV     R5,A
+03A8 08                INC     R0
+03A9 E2                MOVX    A,@R0
+03AA FE                MOV     R6,A
+03AB 08                INC     R0
+03AC E2                MOVX    A,@R0
+03AD FF                MOV     R7,A
+03AE 7800        R     MOV     R0,#LOW tmp
+03B0 E2                MOVX    A,@R0
+03B1 FB                MOV     R3,A
+03B2 08                INC     R0
+03B3 E2                MOVX    A,@R0
+03B4 F9                MOV     R1,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 20  
+
+03B5 08                INC     R0
+03B6 E2                MOVX    A,@R0
+03B7 FA                MOV     R2,A
+03B8 08                INC     R0
+03B9 E2                MOVX    A,@R0
+03BA CB                XCH     A,R3
+03BB F8                MOV     R0,A
+03BC EF                MOV     A,R7
+03BD 6B                XRL     A,R3
+03BE FF                MOV     R7,A
+03BF EE                MOV     A,R6
+03C0 6A                XRL     A,R2
+03C1 FE                MOV     R6,A
+03C2 ED                MOV     A,R5
+03C3 69                XRL     A,R1
+03C4 FD                MOV     R5,A
+03C5 EC                MOV     A,R4
+03C6 68                XRL     A,R0
+03C7 FC                MOV     R4,A
+03C8 7800        R     MOV     R0,#LOW parityCol4321
+03CA 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 89
+03CD E500        R     MOV     A,Data
+03CF FF                MOV     R7,A
+03D0 2404              ADD     A,#04H
+03D2 F500        R     MOV     Data,A
+03D4 A807              MOV     R0,AR7
+03D6 E2                MOVX    A,@R0
+03D7 FC                MOV     R4,A
+03D8 08                INC     R0
+03D9 E2                MOVX    A,@R0
+03DA FD                MOV     R5,A
+03DB 08                INC     R0
+03DC E2                MOVX    A,@R0
+03DD FE                MOV     R6,A
+03DE 08                INC     R0
+03DF E2                MOVX    A,@R0
+03E0 FF                MOV     R7,A
+03E1 7800        R     MOV     R0,#LOW tmp
+03E3 120000      E     LCALL   ?C?LSTPDATA
+03E6 7800        R     MOV     R0,#LOW parityCol
+03E8 E2                MOVX    A,@R0
+03E9 FC                MOV     R4,A
+03EA 08                INC     R0
+03EB E2                MOVX    A,@R0
+03EC FD                MOV     R5,A
+03ED 08                INC     R0
+03EE E2                MOVX    A,@R0
+03EF FE                MOV     R6,A
+03F0 08                INC     R0
+03F1 E2                MOVX    A,@R0
+03F2 FF                MOV     R7,A
+03F3 7800        R     MOV     R0,#LOW tmp
+03F5 E2                MOVX    A,@R0
+03F6 FB                MOV     R3,A
+03F7 08                INC     R0
+03F8 E2                MOVX    A,@R0
+03F9 F9                MOV     R1,A
+03FA 08                INC     R0
+03FB E2                MOVX    A,@R0
+03FC FA                MOV     R2,A
+03FD 08                INC     R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 21  
+
+03FE E2                MOVX    A,@R0
+03FF CB                XCH     A,R3
+0400 F8                MOV     R0,A
+0401 EF                MOV     A,R7
+0402 6B                XRL     A,R3
+0403 FF                MOV     R7,A
+0404 EE                MOV     A,R6
+0405 6A                XRL     A,R2
+0406 FE                MOV     R6,A
+0407 ED                MOV     A,R5
+0408 69                XRL     A,R1
+0409 FD                MOV     R5,A
+040A EC                MOV     A,R4
+040B 68                XRL     A,R0
+040C FC                MOV     R4,A
+040D 7800        R     MOV     R0,#LOW parityCol
+040F 120000      E     LCALL   ?C?LSTPDATA
+0412 7800        R     MOV     R0,#LOW parityCol4242
+0414 E2                MOVX    A,@R0
+0415 FC                MOV     R4,A
+0416 08                INC     R0
+0417 E2                MOVX    A,@R0
+0418 FD                MOV     R5,A
+0419 08                INC     R0
+041A E2                MOVX    A,@R0
+041B FE                MOV     R6,A
+041C 08                INC     R0
+041D E2                MOVX    A,@R0
+041E FF                MOV     R7,A
+041F 7800        R     MOV     R0,#LOW tmp
+0421 E2                MOVX    A,@R0
+0422 FB                MOV     R3,A
+0423 08                INC     R0
+0424 E2                MOVX    A,@R0
+0425 F9                MOV     R1,A
+0426 08                INC     R0
+0427 E2                MOVX    A,@R0
+0428 FA                MOV     R2,A
+0429 08                INC     R0
+042A E2                MOVX    A,@R0
+042B CB                XCH     A,R3
+042C F8                MOV     R0,A
+042D EF                MOV     A,R7
+042E 6B                XRL     A,R3
+042F FF                MOV     R7,A
+0430 EE                MOV     A,R6
+0431 6A                XRL     A,R2
+0432 FE                MOV     R6,A
+0433 ED                MOV     A,R5
+0434 69                XRL     A,R1
+0435 FD                MOV     R5,A
+0436 EC                MOV     A,R4
+0437 68                XRL     A,R0
+0438 FC                MOV     R4,A
+0439 7800        R     MOV     R0,#LOW parityCol4242
+043B 120000      E     LCALL   ?C?LSTPDATA
+043E 7800        R     MOV     R0,#LOW parityCol4343
+0440 E2                MOVX    A,@R0
+0441 FC                MOV     R4,A
+0442 08                INC     R0
+0443 E2                MOVX    A,@R0
+0444 FD                MOV     R5,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 22  
+
+0445 08                INC     R0
+0446 E2                MOVX    A,@R0
+0447 FE                MOV     R6,A
+0448 08                INC     R0
+0449 E2                MOVX    A,@R0
+044A FF                MOV     R7,A
+044B 7800        R     MOV     R0,#LOW tmp
+044D E2                MOVX    A,@R0
+044E FB                MOV     R3,A
+044F 08                INC     R0
+0450 E2                MOVX    A,@R0
+0451 F9                MOV     R1,A
+0452 08                INC     R0
+0453 E2                MOVX    A,@R0
+0454 FA                MOV     R2,A
+0455 08                INC     R0
+0456 E2                MOVX    A,@R0
+0457 CB                XCH     A,R3
+0458 F8                MOV     R0,A
+0459 EF                MOV     A,R7
+045A 6B                XRL     A,R3
+045B FF                MOV     R7,A
+045C EE                MOV     A,R6
+045D 6A                XRL     A,R2
+045E FE                MOV     R6,A
+045F ED                MOV     A,R5
+0460 69                XRL     A,R1
+0461 FD                MOV     R5,A
+0462 EC                MOV     A,R4
+0463 68                XRL     A,R0
+0464 FC                MOV     R4,A
+0465 7800        R     MOV     R0,#LOW parityCol4343
+0467 120000      E     LCALL   ?C?LSTPDATA
+046A 7800        R     MOV     R0,#LOW parityCol4321
+046C E2                MOVX    A,@R0
+046D FC                MOV     R4,A
+046E 08                INC     R0
+046F E2                MOVX    A,@R0
+0470 FD                MOV     R5,A
+0471 08                INC     R0
+0472 E2                MOVX    A,@R0
+0473 FE                MOV     R6,A
+0474 08                INC     R0
+0475 E2                MOVX    A,@R0
+0476 FF                MOV     R7,A
+0477 7800        R     MOV     R0,#LOW tmp
+0479 E2                MOVX    A,@R0
+047A FB                MOV     R3,A
+047B 08                INC     R0
+047C E2                MOVX    A,@R0
+047D F9                MOV     R1,A
+047E 08                INC     R0
+047F E2                MOVX    A,@R0
+0480 FA                MOV     R2,A
+0481 08                INC     R0
+0482 E2                MOVX    A,@R0
+0483 CB                XCH     A,R3
+0484 F8                MOV     R0,A
+0485 EF                MOV     A,R7
+0486 6B                XRL     A,R3
+0487 FF                MOV     R7,A
+0488 EE                MOV     A,R6
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 23  
+
+0489 6A                XRL     A,R2
+048A FE                MOV     R6,A
+048B ED                MOV     A,R5
+048C 69                XRL     A,R1
+048D FD                MOV     R5,A
+048E EC                MOV     A,R4
+048F 68                XRL     A,R0
+0490 FC                MOV     R4,A
+0491 7800        R     MOV     R0,#LOW parityCol4321
+0493 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 91
+0496 7800        R     MOV     R0,#LOW parityColTot
+0498 E2                MOVX    A,@R0
+0499 FC                MOV     R4,A
+049A 08                INC     R0
+049B E2                MOVX    A,@R0
+049C FD                MOV     R5,A
+049D 08                INC     R0
+049E E2                MOVX    A,@R0
+049F FE                MOV     R6,A
+04A0 08                INC     R0
+04A1 E2                MOVX    A,@R0
+04A2 FF                MOV     R7,A
+04A3 7800        R     MOV     R0,#LOW parityCol
+04A5 E2                MOVX    A,@R0
+04A6 FB                MOV     R3,A
+04A7 08                INC     R0
+04A8 E2                MOVX    A,@R0
+04A9 F9                MOV     R1,A
+04AA 08                INC     R0
+04AB E2                MOVX    A,@R0
+04AC FA                MOV     R2,A
+04AD 08                INC     R0
+04AE E2                MOVX    A,@R0
+04AF CB                XCH     A,R3
+04B0 F8                MOV     R0,A
+04B1 EF                MOV     A,R7
+04B2 6B                XRL     A,R3
+04B3 FF                MOV     R7,A
+04B4 EE                MOV     A,R6
+04B5 6A                XRL     A,R2
+04B6 FE                MOV     R6,A
+04B7 ED                MOV     A,R5
+04B8 69                XRL     A,R1
+04B9 FD                MOV     R5,A
+04BA EC                MOV     A,R4
+04BB 68                XRL     A,R0
+04BC FC                MOV     R4,A
+04BD 7800        R     MOV     R0,#LOW parityColTot
+04BF 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 93
+04C2 7800        R     MOV     R0,#LOW parityCol
+04C4 E2                MOVX    A,@R0
+04C5 FC                MOV     R4,A
+04C6 08                INC     R0
+04C7 E2                MOVX    A,@R0
+04C8 FD                MOV     R5,A
+04C9 08                INC     R0
+04CA E2                MOVX    A,@R0
+04CB FE                MOV     R6,A
+04CC 08                INC     R0
+04CD E2                MOVX    A,@R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 24  
+
+04CE FF                MOV     R7,A
+04CF 7810              MOV     R0,#010H
+04D1 120000      E     LCALL   ?C?ULSHR
+04D4 7800        R     MOV     R0,#LOW parityCol
+04D6 E2                MOVX    A,@R0
+04D7 FB                MOV     R3,A
+04D8 08                INC     R0
+04D9 E2                MOVX    A,@R0
+04DA F9                MOV     R1,A
+04DB 08                INC     R0
+04DC E2                MOVX    A,@R0
+04DD FA                MOV     R2,A
+04DE 08                INC     R0
+04DF E2                MOVX    A,@R0
+04E0 CB                XCH     A,R3
+04E1 F8                MOV     R0,A
+04E2 EB                MOV     A,R3
+04E3 6F                XRL     A,R7
+04E4 FF                MOV     R7,A
+04E5 EA                MOV     A,R2
+04E6 6E                XRL     A,R6
+04E7 FE                MOV     R6,A
+04E8 E9                MOV     A,R1
+04E9 6D                XRL     A,R5
+04EA FD                MOV     R5,A
+04EB E8                MOV     A,R0
+04EC 6C                XRL     A,R4
+04ED FC                MOV     R4,A
+04EE 7800        R     MOV     R0,#LOW tmp
+04F0 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 94
+04F3 7800        R     MOV     R0,#LOW tmp
+04F5 E2                MOVX    A,@R0
+04F6 FC                MOV     R4,A
+04F7 08                INC     R0
+04F8 E2                MOVX    A,@R0
+04F9 FD                MOV     R5,A
+04FA 08                INC     R0
+04FB E2                MOVX    A,@R0
+04FC FE                MOV     R6,A
+04FD 08                INC     R0
+04FE E2                MOVX    A,@R0
+04FF FF                MOV     R7,A
+0500 7808              MOV     R0,#08H
+0502 120000      E     LCALL   ?C?ULSHR
+0505 7800        R     MOV     R0,#LOW tmp
+0507 E2                MOVX    A,@R0
+0508 FB                MOV     R3,A
+0509 08                INC     R0
+050A E2                MOVX    A,@R0
+050B F9                MOV     R1,A
+050C 08                INC     R0
+050D E2                MOVX    A,@R0
+050E FA                MOV     R2,A
+050F 08                INC     R0
+0510 E2                MOVX    A,@R0
+0511 CB                XCH     A,R3
+0512 F8                MOV     R0,A
+0513 EB                MOV     A,R3
+0514 6F                XRL     A,R7
+0515 FF                MOV     R7,A
+0516 EA                MOV     A,R2
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 25  
+
+0517 6E                XRL     A,R6
+0518 FE                MOV     R6,A
+0519 E9                MOV     A,R1
+051A 6D                XRL     A,R5
+051B FD                MOV     R5,A
+051C E8                MOV     A,R0
+051D 6C                XRL     A,R4
+051E FC                MOV     R4,A
+051F 7800        R     MOV     R0,#LOW tmp
+0521 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 96
+0524 7800        R     MOV     R0,#LOW tmp
+0526 E2                MOVX    A,@R0
+0527 FC                MOV     R4,A
+0528 08                INC     R0
+0529 E2                MOVX    A,@R0
+052A FD                MOV     R5,A
+052B 08                INC     R0
+052C E2                MOVX    A,@R0
+052D FE                MOV     R6,A
+052E 08                INC     R0
+052F E2                MOVX    A,@R0
+0530 FF                MOV     R7,A
+0531 7804              MOV     R0,#04H
+0533 120000      E     LCALL   ?C?ULSHR
+0536 7800        R     MOV     R0,#LOW tmp
+0538 E2                MOVX    A,@R0
+0539 FB                MOV     R3,A
+053A 08                INC     R0
+053B E2                MOVX    A,@R0
+053C F9                MOV     R1,A
+053D 08                INC     R0
+053E E2                MOVX    A,@R0
+053F FA                MOV     R2,A
+0540 08                INC     R0
+0541 E2                MOVX    A,@R0
+0542 CB                XCH     A,R3
+0543 F8                MOV     R0,A
+0544 EB                MOV     A,R3
+0545 6F                XRL     A,R7
+0546 FF                MOV     R7,A
+0547 EA                MOV     A,R2
+0548 6E                XRL     A,R6
+0549 FE                MOV     R6,A
+054A E9                MOV     A,R1
+054B 6D                XRL     A,R5
+054C FD                MOV     R5,A
+054D E8                MOV     A,R0
+054E 6C                XRL     A,R4
+054F FC                MOV     R4,A
+0550 7800        R     MOV     R0,#LOW tmp
+0552 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 98
+0555 7800        R     MOV     R0,#LOW tmp
+0557 E2                MOVX    A,@R0
+0558 FC                MOV     R4,A
+0559 08                INC     R0
+055A E2                MOVX    A,@R0
+055B FD                MOV     R5,A
+055C 08                INC     R0
+055D E2                MOVX    A,@R0
+055E FE                MOV     R6,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 26  
+
+055F 08                INC     R0
+0560 E2                MOVX    A,@R0
+0561 FF                MOV     R7,A
+0562 7802              MOV     R0,#02H
+0564 120000      E     LCALL   ?C?ULSHR
+0567 7800        R     MOV     R0,#LOW tmp
+0569 E2                MOVX    A,@R0
+056A FB                MOV     R3,A
+056B 08                INC     R0
+056C E2                MOVX    A,@R0
+056D F9                MOV     R1,A
+056E 08                INC     R0
+056F E2                MOVX    A,@R0
+0570 FA                MOV     R2,A
+0571 08                INC     R0
+0572 E2                MOVX    A,@R0
+0573 CB                XCH     A,R3
+0574 F8                MOV     R0,A
+0575 EB                MOV     A,R3
+0576 6F                XRL     A,R7
+0577 FF                MOV     R7,A
+0578 EA                MOV     A,R2
+0579 6E                XRL     A,R6
+057A FE                MOV     R6,A
+057B E9                MOV     A,R1
+057C 6D                XRL     A,R5
+057D FD                MOV     R5,A
+057E E8                MOV     A,R0
+057F 6C                XRL     A,R4
+0580 FC                MOV     R4,A
+0581 EF                MOV     A,R7
+0582 5403              ANL     A,#03H
+0584 FF                MOV     R7,A
+0585 E4                CLR     A
+0586 FE                MOV     R6,A
+0587 FD                MOV     R5,A
+0588 FC                MOV     R4,A
+0589 7800        R     MOV     R0,#LOW tmp
+058B 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 99
+058E E4                CLR     A
+058F 7F01              MOV     R7,#01H
+0591 FE                MOV     R6,A
+0592 FD                MOV     R5,A
+0593 FC                MOV     R4,A
+0594 7800        R     MOV     R0,#LOW tmp
+0596 E2                MOVX    A,@R0
+0597 FB                MOV     R3,A
+0598 08                INC     R0
+0599 E2                MOVX    A,@R0
+059A F9                MOV     R1,A
+059B 08                INC     R0
+059C E2                MOVX    A,@R0
+059D FA                MOV     R2,A
+059E 08                INC     R0
+059F E2                MOVX    A,@R0
+05A0 CB                XCH     A,R3
+05A1 F8                MOV     R0,A
+05A2 C3                CLR     C
+05A3 120000      E     LCALL   ?C?ULCMP
+05A6 601A              JZ      ?C0005
+05A8 E4                CLR     A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 27  
+
+05A9 7F02              MOV     R7,#02H
+05AB FE                MOV     R6,A
+05AC FD                MOV     R5,A
+05AD FC                MOV     R4,A
+05AE 7800        R     MOV     R0,#LOW tmp
+05B0 E2                MOVX    A,@R0
+05B1 FB                MOV     R3,A
+05B2 08                INC     R0
+05B3 E2                MOVX    A,@R0
+05B4 F9                MOV     R1,A
+05B5 08                INC     R0
+05B6 E2                MOVX    A,@R0
+05B7 FA                MOV     R2,A
+05B8 08                INC     R0
+05B9 E2                MOVX    A,@R0
+05BA CB                XCH     A,R3
+05BB F8                MOV     R0,A
+05BC C3                CLR     C
+05BD 120000      E     LCALL   ?C?ULCMP
+05C0 7043              JNZ     ?C0003
+05C2         ?C0005:
+                                           ; SOURCE LINE # 100
+                                           ; SOURCE LINE # 101
+05C2 7800        R     MOV     R0,#LOW uiparity
+05C4 E2                MOVX    A,@R0
+05C5 FC                MOV     R4,A
+05C6 08                INC     R0
+05C7 E2                MOVX    A,@R0
+05C8 FD                MOV     R5,A
+05C9 08                INC     R0
+05CA E2                MOVX    A,@R0
+05CB FE                MOV     R6,A
+05CC 08                INC     R0
+05CD E2                MOVX    A,@R0
+05CE FF                MOV     R7,A
+05CF 900000      R     MOV     DPTR,#i
+05D2 E0                MOVX    A,@DPTR
+05D3 F8                MOV     R0,A
+05D4 A3                INC     DPTR
+05D5 E0                MOVX    A,@DPTR
+05D6 F9                MOV     R1,A
+05D7 A3                INC     DPTR
+05D8 E0                MOVX    A,@DPTR
+05D9 FA                MOV     R2,A
+05DA A3                INC     DPTR
+05DB E0                MOVX    A,@DPTR
+05DC FB                MOV     R3,A
+05DD EF                MOV     A,R7
+05DE 6B                XRL     A,R3
+05DF FF                MOV     R7,A
+05E0 EE                MOV     A,R6
+05E1 6A                XRL     A,R2
+05E2 FE                MOV     R6,A
+05E3 ED                MOV     A,R5
+05E4 69                XRL     A,R1
+05E5 FD                MOV     R5,A
+05E6 EC                MOV     A,R4
+05E7 68                XRL     A,R0
+05E8 FC                MOV     R4,A
+05E9 7800        R     MOV     R0,#LOW uiparity
+05EB 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 102
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 28  
+
+05EE 7800        R     MOV     R0,#LOW Xorbit
+05F0 E2                MOVX    A,@R0
+05F1 FC                MOV     R4,A
+05F2 08                INC     R0
+05F3 E2                MOVX    A,@R0
+05F4 FD                MOV     R5,A
+05F5 08                INC     R0
+05F6 E2                MOVX    A,@R0
+05F7 FE                MOV     R6,A
+05F8 08                INC     R0
+05F9 E2                MOVX    A,@R0
+05FA 6401              XRL     A,#01H
+05FC FF                MOV     R7,A
+05FD EE                MOV     A,R6
+05FE ED                MOV     A,R5
+05FF EC                MOV     A,R4
+0600 7800        R     MOV     R0,#LOW Xorbit
+0602 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 103
+                                           ; SOURCE LINE # 105
+0605         ?C0003:
+0605 900000      R     MOV     DPTR,#i
+0608 E0                MOVX    A,@DPTR
+0609 FC                MOV     R4,A
+060A A3                INC     DPTR
+060B E0                MOVX    A,@DPTR
+060C FD                MOV     R5,A
+060D A3                INC     DPTR
+060E E0                MOVX    A,@DPTR
+060F FE                MOV     R6,A
+0610 A3                INC     DPTR
+0611 E0                MOVX    A,@DPTR
+0612 2401              ADD     A,#01H
+0614 FF                MOV     R7,A
+0615 E4                CLR     A
+0616 3E                ADDC    A,R6
+0617 FE                MOV     R6,A
+0618 E4                CLR     A
+0619 3D                ADDC    A,R5
+061A FD                MOV     R5,A
+061B E4                CLR     A
+061C 3C                ADDC    A,R4
+061D FC                MOV     R4,A
+061E 900000      R     MOV     DPTR,#i
+0621 120000      E     LCALL   ?C?LSTXDATA
+0624 020000      R     LJMP    ?C0001
+0627         ?C0002:
+                                           ; SOURCE LINE # 107
+0627 7800        R     MOV     R0,#LOW parityCol4321
+0629 E2                MOVX    A,@R0
+062A FC                MOV     R4,A
+062B 08                INC     R0
+062C E2                MOVX    A,@R0
+062D FD                MOV     R5,A
+062E 08                INC     R0
+062F E2                MOVX    A,@R0
+0630 FE                MOV     R6,A
+0631 08                INC     R0
+0632 E2                MOVX    A,@R0
+0633 FF                MOV     R7,A
+0634 7810              MOV     R0,#010H
+0636 120000      E     LCALL   ?C?ULSHR
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 29  
+
+0639 7800        R     MOV     R0,#LOW parityCol4321
+063B E2                MOVX    A,@R0
+063C FB                MOV     R3,A
+063D 08                INC     R0
+063E E2                MOVX    A,@R0
+063F F9                MOV     R1,A
+0640 08                INC     R0
+0641 E2                MOVX    A,@R0
+0642 FA                MOV     R2,A
+0643 08                INC     R0
+0644 E2                MOVX    A,@R0
+0645 CB                XCH     A,R3
+0646 F8                MOV     R0,A
+0647 EB                MOV     A,R3
+0648 6F                XRL     A,R7
+0649 FF                MOV     R7,A
+064A EA                MOV     A,R2
+064B 6E                XRL     A,R6
+064C FE                MOV     R6,A
+064D E9                MOV     A,R1
+064E 6D                XRL     A,R5
+064F FD                MOV     R5,A
+0650 E8                MOV     A,R0
+0651 6C                XRL     A,R4
+0652 FC                MOV     R4,A
+0653 7800        R     MOV     R0,#LOW tmp
+0655 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 108
+0658 7800        R     MOV     R0,#LOW tmp
+065A E2                MOVX    A,@R0
+065B FC                MOV     R4,A
+065C 08                INC     R0
+065D E2                MOVX    A,@R0
+065E FD                MOV     R5,A
+065F 08                INC     R0
+0660 E2                MOVX    A,@R0
+0661 FE                MOV     R6,A
+0662 08                INC     R0
+0663 E2                MOVX    A,@R0
+0664 FF                MOV     R7,A
+0665 7808              MOV     R0,#08H
+0667 120000      E     LCALL   ?C?LSHL
+066A 7800        R     MOV     R0,#LOW tmp
+066C E2                MOVX    A,@R0
+066D FB                MOV     R3,A
+066E 08                INC     R0
+066F E2                MOVX    A,@R0
+0670 F9                MOV     R1,A
+0671 08                INC     R0
+0672 E2                MOVX    A,@R0
+0673 FA                MOV     R2,A
+0674 08                INC     R0
+0675 E2                MOVX    A,@R0
+0676 CB                XCH     A,R3
+0677 F8                MOV     R0,A
+0678 EB                MOV     A,R3
+0679 6F                XRL     A,R7
+067A FF                MOV     R7,A
+067B EA                MOV     A,R2
+067C 6E                XRL     A,R6
+067D FE                MOV     R6,A
+067E E9                MOV     A,R1
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 30  
+
+067F 6D                XRL     A,R5
+0680 FD                MOV     R5,A
+0681 E8                MOV     A,R0
+0682 6C                XRL     A,R4
+0683 FC                MOV     R4,A
+0684 7800        R     MOV     R0,#LOW tmp
+0686 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 109
+0689 7800        R     MOV     R0,#LOW tmp
+068B E2                MOVX    A,@R0
+068C FC                MOV     R4,A
+068D 08                INC     R0
+068E E2                MOVX    A,@R0
+068F FD                MOV     R5,A
+0690 08                INC     R0
+0691 E2                MOVX    A,@R0
+0692 FE                MOV     R6,A
+0693 08                INC     R0
+0694 E2                MOVX    A,@R0
+0695 FF                MOV     R7,A
+0696 7804              MOV     R0,#04H
+0698 120000      E     LCALL   ?C?ULSHR
+069B 7800        R     MOV     R0,#LOW tmp
+069D E2                MOVX    A,@R0
+069E FB                MOV     R3,A
+069F 08                INC     R0
+06A0 E2                MOVX    A,@R0
+06A1 F9                MOV     R1,A
+06A2 08                INC     R0
+06A3 E2                MOVX    A,@R0
+06A4 FA                MOV     R2,A
+06A5 08                INC     R0
+06A6 E2                MOVX    A,@R0
+06A7 CB                XCH     A,R3
+06A8 F8                MOV     R0,A
+06A9 EB                MOV     A,R3
+06AA 6F                XRL     A,R7
+06AB FF                MOV     R7,A
+06AC EA                MOV     A,R2
+06AD 6E                XRL     A,R6
+06AE FE                MOV     R6,A
+06AF E9                MOV     A,R1
+06B0 6D                XRL     A,R5
+06B1 FD                MOV     R5,A
+06B2 E8                MOV     A,R0
+06B3 6C                XRL     A,R4
+06B4 FC                MOV     R4,A
+06B5 7800        R     MOV     R0,#LOW tmp
+06B7 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 110
+06BA 7800        R     MOV     R0,#LOW tmp
+06BC E2                MOVX    A,@R0
+06BD FC                MOV     R4,A
+06BE 08                INC     R0
+06BF E2                MOVX    A,@R0
+06C0 FD                MOV     R5,A
+06C1 08                INC     R0
+06C2 E2                MOVX    A,@R0
+06C3 FE                MOV     R6,A
+06C4 08                INC     R0
+06C5 E2                MOVX    A,@R0
+06C6 FF                MOV     R7,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 31  
+
+06C7 7802              MOV     R0,#02H
+06C9 120000      E     LCALL   ?C?ULSHR
+06CC 7800        R     MOV     R0,#LOW tmp
+06CE E2                MOVX    A,@R0
+06CF FB                MOV     R3,A
+06D0 08                INC     R0
+06D1 E2                MOVX    A,@R0
+06D2 F9                MOV     R1,A
+06D3 08                INC     R0
+06D4 E2                MOVX    A,@R0
+06D5 FA                MOV     R2,A
+06D6 08                INC     R0
+06D7 E2                MOVX    A,@R0
+06D8 CB                XCH     A,R3
+06D9 F8                MOV     R0,A
+06DA EB                MOV     A,R3
+06DB 6F                XRL     A,R7
+06DC FF                MOV     R7,A
+06DD EA                MOV     A,R2
+06DE 6E                XRL     A,R6
+06DF FE                MOV     R6,A
+06E0 E9                MOV     A,R1
+06E1 6D                XRL     A,R5
+06E2 FD                MOV     R5,A
+06E3 E8                MOV     A,R0
+06E4 6C                XRL     A,R4
+06E5 FC                MOV     R4,A
+06E6 7800        R     MOV     R0,#LOW tmp
+06E8 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 111
+06EB 7800        R     MOV     R0,#LOW ecc
+06ED E2                MOVX    A,@R0
+06EE FB                MOV     R3,A
+06EF 08                INC     R0
+06F0 E2                MOVX    A,@R0
+06F1 F9                MOV     R1,A
+06F2 08                INC     R0
+06F3 E2                MOVX    A,@R0
+06F4 FA                MOV     R2,A
+06F5 08                INC     R0
+06F6 E2                MOVX    A,@R0
+06F7 CB                XCH     A,R3
+06F8 F8                MOV     R0,A
+06F9 C000              PUSH    AR0
+06FB C001              PUSH    AR1
+06FD C002              PUSH    AR2
+06FF C003              PUSH    AR3
+0701 7800        R     MOV     R0,#LOW tmp
+0703 E2                MOVX    A,@R0
+0704 FC                MOV     R4,A
+0705 08                INC     R0
+0706 E2                MOVX    A,@R0
+0707 FD                MOV     R5,A
+0708 08                INC     R0
+0709 E2                MOVX    A,@R0
+070A FE                MOV     R6,A
+070B 08                INC     R0
+070C E2                MOVX    A,@R0
+070D FF                MOV     R7,A
+070E 7801              MOV     R0,#01H
+0710 120000      E     LCALL   ?C?LSHL
+0713 7800        R     MOV     R0,#LOW tmp
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 32  
+
+0715 E2                MOVX    A,@R0
+0716 FB                MOV     R3,A
+0717 08                INC     R0
+0718 E2                MOVX    A,@R0
+0719 F9                MOV     R1,A
+071A 08                INC     R0
+071B E2                MOVX    A,@R0
+071C FA                MOV     R2,A
+071D 08                INC     R0
+071E E2                MOVX    A,@R0
+071F CB                XCH     A,R3
+0720 F8                MOV     R0,A
+0721 EB                MOV     A,R3
+0722 6F                XRL     A,R7
+0723 FF                MOV     R7,A
+0724 EA                MOV     A,R2
+0725 6E                XRL     A,R6
+0726 FE                MOV     R6,A
+0727 E9                MOV     A,R1
+0728 6D                XRL     A,R5
+0729 FD                MOV     R5,A
+072A E8                MOV     A,R0
+072B 6C                XRL     A,R4
+072C FC                MOV     R4,A
+072D E4                CLR     A
+072E EE                MOV     A,R6
+072F 5402              ANL     A,#02H
+0731 FE                MOV     R6,A
+0732 E4                CLR     A
+0733 D003              POP     AR3
+0735 D002              POP     AR2
+0737 D001              POP     AR1
+0739 D000              POP     AR0
+073B EB                MOV     A,R3
+073C FF                MOV     R7,A
+073D EA                MOV     A,R2
+073E 4E                ORL     A,R6
+073F FE                MOV     R6,A
+0740 E9                MOV     A,R1
+0741 FD                MOV     R5,A
+0742 E8                MOV     A,R0
+0743 FC                MOV     R4,A
+0744 7800        R     MOV     R0,#LOW ecc
+0746 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 114
+0749 7800        R     MOV     R0,#LOW parityCol4343
+074B E2                MOVX    A,@R0
+074C FC                MOV     R4,A
+074D 08                INC     R0
+074E E2                MOVX    A,@R0
+074F FD                MOV     R5,A
+0750 08                INC     R0
+0751 E2                MOVX    A,@R0
+0752 FE                MOV     R6,A
+0753 08                INC     R0
+0754 E2                MOVX    A,@R0
+0755 FF                MOV     R7,A
+0756 7810              MOV     R0,#010H
+0758 120000      E     LCALL   ?C?ULSHR
+075B 7800        R     MOV     R0,#LOW parityCol4343
+075D E2                MOVX    A,@R0
+075E FB                MOV     R3,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 33  
+
+075F 08                INC     R0
+0760 E2                MOVX    A,@R0
+0761 F9                MOV     R1,A
+0762 08                INC     R0
+0763 E2                MOVX    A,@R0
+0764 FA                MOV     R2,A
+0765 08                INC     R0
+0766 E2                MOVX    A,@R0
+0767 CB                XCH     A,R3
+0768 F8                MOV     R0,A
+0769 EB                MOV     A,R3
+076A 6F                XRL     A,R7
+076B FF                MOV     R7,A
+076C EA                MOV     A,R2
+076D 6E                XRL     A,R6
+076E FE                MOV     R6,A
+076F E9                MOV     A,R1
+0770 6D                XRL     A,R5
+0771 FD                MOV     R5,A
+0772 E8                MOV     A,R0
+0773 6C                XRL     A,R4
+0774 FC                MOV     R4,A
+0775 7800        R     MOV     R0,#LOW tmp
+0777 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 115
+077A 7800        R     MOV     R0,#LOW tmp
+077C E2                MOVX    A,@R0
+077D FC                MOV     R4,A
+077E 08                INC     R0
+077F E2                MOVX    A,@R0
+0780 FD                MOV     R5,A
+0781 08                INC     R0
+0782 E2                MOVX    A,@R0
+0783 FE                MOV     R6,A
+0784 08                INC     R0
+0785 E2                MOVX    A,@R0
+0786 FF                MOV     R7,A
+0787 7808              MOV     R0,#08H
+0789 120000      E     LCALL   ?C?ULSHR
+078C 7800        R     MOV     R0,#LOW tmp
+078E E2                MOVX    A,@R0
+078F FB                MOV     R3,A
+0790 08                INC     R0
+0791 E2                MOVX    A,@R0
+0792 F9                MOV     R1,A
+0793 08                INC     R0
+0794 E2                MOVX    A,@R0
+0795 FA                MOV     R2,A
+0796 08                INC     R0
+0797 E2                MOVX    A,@R0
+0798 CB                XCH     A,R3
+0799 F8                MOV     R0,A
+079A EB                MOV     A,R3
+079B 6F                XRL     A,R7
+079C FF                MOV     R7,A
+079D EA                MOV     A,R2
+079E 6E                XRL     A,R6
+079F FE                MOV     R6,A
+07A0 E9                MOV     A,R1
+07A1 6D                XRL     A,R5
+07A2 FD                MOV     R5,A
+07A3 E8                MOV     A,R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 34  
+
+07A4 6C                XRL     A,R4
+07A5 FC                MOV     R4,A
+07A6 7800        R     MOV     R0,#LOW tmp
+07A8 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 116
+07AB 7800        R     MOV     R0,#LOW tmp
+07AD E2                MOVX    A,@R0
+07AE FC                MOV     R4,A
+07AF 08                INC     R0
+07B0 E2                MOVX    A,@R0
+07B1 FD                MOV     R5,A
+07B2 08                INC     R0
+07B3 E2                MOVX    A,@R0
+07B4 FE                MOV     R6,A
+07B5 08                INC     R0
+07B6 E2                MOVX    A,@R0
+07B7 FF                MOV     R7,A
+07B8 7804              MOV     R0,#04H
+07BA 120000      E     LCALL   ?C?LSHL
+07BD 7800        R     MOV     R0,#LOW tmp
+07BF E2                MOVX    A,@R0
+07C0 FB                MOV     R3,A
+07C1 08                INC     R0
+07C2 E2                MOVX    A,@R0
+07C3 F9                MOV     R1,A
+07C4 08                INC     R0
+07C5 E2                MOVX    A,@R0
+07C6 FA                MOV     R2,A
+07C7 08                INC     R0
+07C8 E2                MOVX    A,@R0
+07C9 CB                XCH     A,R3
+07CA F8                MOV     R0,A
+07CB EB                MOV     A,R3
+07CC 6F                XRL     A,R7
+07CD FF                MOV     R7,A
+07CE EA                MOV     A,R2
+07CF 6E                XRL     A,R6
+07D0 FE                MOV     R6,A
+07D1 E9                MOV     A,R1
+07D2 6D                XRL     A,R5
+07D3 FD                MOV     R5,A
+07D4 E8                MOV     A,R0
+07D5 6C                XRL     A,R4
+07D6 FC                MOV     R4,A
+07D7 7800        R     MOV     R0,#LOW tmp
+07D9 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 117
+07DC 7800        R     MOV     R0,#LOW tmp
+07DE E2                MOVX    A,@R0
+07DF FC                MOV     R4,A
+07E0 08                INC     R0
+07E1 E2                MOVX    A,@R0
+07E2 FD                MOV     R5,A
+07E3 08                INC     R0
+07E4 E2                MOVX    A,@R0
+07E5 FE                MOV     R6,A
+07E6 08                INC     R0
+07E7 E2                MOVX    A,@R0
+07E8 FF                MOV     R7,A
+07E9 7802              MOV     R0,#02H
+07EB 120000      E     LCALL   ?C?LSHL
+07EE 7800        R     MOV     R0,#LOW tmp
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 35  
+
+07F0 E2                MOVX    A,@R0
+07F1 FB                MOV     R3,A
+07F2 08                INC     R0
+07F3 E2                MOVX    A,@R0
+07F4 F9                MOV     R1,A
+07F5 08                INC     R0
+07F6 E2                MOVX    A,@R0
+07F7 FA                MOV     R2,A
+07F8 08                INC     R0
+07F9 E2                MOVX    A,@R0
+07FA CB                XCH     A,R3
+07FB F8                MOV     R0,A
+07FC EB                MOV     A,R3
+07FD 6F                XRL     A,R7
+07FE FF                MOV     R7,A
+07FF EA                MOV     A,R2
+0800 6E                XRL     A,R6
+0801 FE                MOV     R6,A
+0802 E9                MOV     A,R1
+0803 6D                XRL     A,R5
+0804 FD                MOV     R5,A
+0805 E8                MOV     A,R0
+0806 6C                XRL     A,R4
+0807 FC                MOV     R4,A
+0808 7800        R     MOV     R0,#LOW tmp
+080A 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 118
+080D 7800        R     MOV     R0,#LOW ecc
+080F E2                MOVX    A,@R0
+0810 FB                MOV     R3,A
+0811 08                INC     R0
+0812 E2                MOVX    A,@R0
+0813 F9                MOV     R1,A
+0814 08                INC     R0
+0815 E2                MOVX    A,@R0
+0816 FA                MOV     R2,A
+0817 08                INC     R0
+0818 E2                MOVX    A,@R0
+0819 CB                XCH     A,R3
+081A F8                MOV     R0,A
+081B C000              PUSH    AR0
+081D C001              PUSH    AR1
+081F C002              PUSH    AR2
+0821 C003              PUSH    AR3
+0823 7800        R     MOV     R0,#LOW tmp
+0825 E2                MOVX    A,@R0
+0826 FC                MOV     R4,A
+0827 08                INC     R0
+0828 E2                MOVX    A,@R0
+0829 FD                MOV     R5,A
+082A 08                INC     R0
+082B E2                MOVX    A,@R0
+082C FE                MOV     R6,A
+082D 08                INC     R0
+082E E2                MOVX    A,@R0
+082F FF                MOV     R7,A
+0830 7801              MOV     R0,#01H
+0832 120000      E     LCALL   ?C?LSHL
+0835 7800        R     MOV     R0,#LOW tmp
+0837 E2                MOVX    A,@R0
+0838 FB                MOV     R3,A
+0839 08                INC     R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 36  
+
+083A E2                MOVX    A,@R0
+083B F9                MOV     R1,A
+083C 08                INC     R0
+083D E2                MOVX    A,@R0
+083E FA                MOV     R2,A
+083F 08                INC     R0
+0840 E2                MOVX    A,@R0
+0841 CB                XCH     A,R3
+0842 F8                MOV     R0,A
+0843 EB                MOV     A,R3
+0844 6F                XRL     A,R7
+0845 FF                MOV     R7,A
+0846 EA                MOV     A,R2
+0847 6E                XRL     A,R6
+0848 FE                MOV     R6,A
+0849 E9                MOV     A,R1
+084A 6D                XRL     A,R5
+084B FD                MOV     R5,A
+084C E8                MOV     A,R0
+084D 6C                XRL     A,R4
+084E FC                MOV     R4,A
+084F EF                MOV     A,R7
+0850 5480              ANL     A,#080H
+0852 FF                MOV     R7,A
+0853 E4                CLR     A
+0854 D003              POP     AR3
+0856 D002              POP     AR2
+0858 D001              POP     AR1
+085A D000              POP     AR0
+085C EB                MOV     A,R3
+085D 4F                ORL     A,R7
+085E FF                MOV     R7,A
+085F EA                MOV     A,R2
+0860 FE                MOV     R6,A
+0861 E9                MOV     A,R1
+0862 FD                MOV     R5,A
+0863 E8                MOV     A,R0
+0864 FC                MOV     R4,A
+0865 7800        R     MOV     R0,#LOW ecc
+0867 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 121
+086A 7800        R     MOV     R0,#LOW parityCol4242
+086C E2                MOVX    A,@R0
+086D FC                MOV     R4,A
+086E 08                INC     R0
+086F E2                MOVX    A,@R0
+0870 FD                MOV     R5,A
+0871 08                INC     R0
+0872 E2                MOVX    A,@R0
+0873 FE                MOV     R6,A
+0874 08                INC     R0
+0875 E2                MOVX    A,@R0
+0876 FF                MOV     R7,A
+0877 7810              MOV     R0,#010H
+0879 120000      E     LCALL   ?C?ULSHR
+087C 7800        R     MOV     R0,#LOW parityCol4242
+087E E2                MOVX    A,@R0
+087F FB                MOV     R3,A
+0880 08                INC     R0
+0881 E2                MOVX    A,@R0
+0882 F9                MOV     R1,A
+0883 08                INC     R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 37  
+
+0884 E2                MOVX    A,@R0
+0885 FA                MOV     R2,A
+0886 08                INC     R0
+0887 E2                MOVX    A,@R0
+0888 CB                XCH     A,R3
+0889 F8                MOV     R0,A
+088A EB                MOV     A,R3
+088B 6F                XRL     A,R7
+088C FF                MOV     R7,A
+088D EA                MOV     A,R2
+088E 6E                XRL     A,R6
+088F FE                MOV     R6,A
+0890 E9                MOV     A,R1
+0891 6D                XRL     A,R5
+0892 FD                MOV     R5,A
+0893 E8                MOV     A,R0
+0894 6C                XRL     A,R4
+0895 FC                MOV     R4,A
+0896 7800        R     MOV     R0,#LOW tmp
+0898 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 122
+089B 7800        R     MOV     R0,#LOW tmp
+089D E2                MOVX    A,@R0
+089E FC                MOV     R4,A
+089F 08                INC     R0
+08A0 E2                MOVX    A,@R0
+08A1 FD                MOV     R5,A
+08A2 08                INC     R0
+08A3 E2                MOVX    A,@R0
+08A4 FE                MOV     R6,A
+08A5 08                INC     R0
+08A6 E2                MOVX    A,@R0
+08A7 FF                MOV     R7,A
+08A8 7808              MOV     R0,#08H
+08AA 120000      E     LCALL   ?C?ULSHR
+08AD 7800        R     MOV     R0,#LOW tmp
+08AF E2                MOVX    A,@R0
+08B0 FB                MOV     R3,A
+08B1 08                INC     R0
+08B2 E2                MOVX    A,@R0
+08B3 F9                MOV     R1,A
+08B4 08                INC     R0
+08B5 E2                MOVX    A,@R0
+08B6 FA                MOV     R2,A
+08B7 08                INC     R0
+08B8 E2                MOVX    A,@R0
+08B9 CB                XCH     A,R3
+08BA F8                MOV     R0,A
+08BB EB                MOV     A,R3
+08BC 6F                XRL     A,R7
+08BD FF                MOV     R7,A
+08BE EA                MOV     A,R2
+08BF 6E                XRL     A,R6
+08C0 FE                MOV     R6,A
+08C1 E9                MOV     A,R1
+08C2 6D                XRL     A,R5
+08C3 FD                MOV     R5,A
+08C4 E8                MOV     A,R0
+08C5 6C                XRL     A,R4
+08C6 FC                MOV     R4,A
+08C7 7800        R     MOV     R0,#LOW tmp
+08C9 120000      E     LCALL   ?C?LSTPDATA
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 38  
+
+                                           ; SOURCE LINE # 123
+08CC 7800        R     MOV     R0,#LOW tmp
+08CE E2                MOVX    A,@R0
+08CF FC                MOV     R4,A
+08D0 08                INC     R0
+08D1 E2                MOVX    A,@R0
+08D2 FD                MOV     R5,A
+08D3 08                INC     R0
+08D4 E2                MOVX    A,@R0
+08D5 FE                MOV     R6,A
+08D6 08                INC     R0
+08D7 E2                MOVX    A,@R0
+08D8 FF                MOV     R7,A
+08D9 7804              MOV     R0,#04H
+08DB 120000      E     LCALL   ?C?LSHL
+08DE 7800        R     MOV     R0,#LOW tmp
+08E0 E2                MOVX    A,@R0
+08E1 FB                MOV     R3,A
+08E2 08                INC     R0
+08E3 E2                MOVX    A,@R0
+08E4 F9                MOV     R1,A
+08E5 08                INC     R0
+08E6 E2                MOVX    A,@R0
+08E7 FA                MOV     R2,A
+08E8 08                INC     R0
+08E9 E2                MOVX    A,@R0
+08EA CB                XCH     A,R3
+08EB F8                MOV     R0,A
+08EC EB                MOV     A,R3
+08ED 6F                XRL     A,R7
+08EE FF                MOV     R7,A
+08EF EA                MOV     A,R2
+08F0 6E                XRL     A,R6
+08F1 FE                MOV     R6,A
+08F2 E9                MOV     A,R1
+08F3 6D                XRL     A,R5
+08F4 FD                MOV     R5,A
+08F5 E8                MOV     A,R0
+08F6 6C                XRL     A,R4
+08F7 FC                MOV     R4,A
+08F8 7800        R     MOV     R0,#LOW tmp
+08FA 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 124
+08FD 7800        R     MOV     R0,#LOW tmp
+08FF E2                MOVX    A,@R0
+0900 FC                MOV     R4,A
+0901 08                INC     R0
+0902 E2                MOVX    A,@R0
+0903 FD                MOV     R5,A
+0904 08                INC     R0
+0905 E2                MOVX    A,@R0
+0906 FE                MOV     R6,A
+0907 08                INC     R0
+0908 E2                MOVX    A,@R0
+0909 FF                MOV     R7,A
+090A 7802              MOV     R0,#02H
+090C 120000      E     LCALL   ?C?ULSHR
+090F 7800        R     MOV     R0,#LOW tmp
+0911 E2                MOVX    A,@R0
+0912 FB                MOV     R3,A
+0913 08                INC     R0
+0914 E2                MOVX    A,@R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 39  
+
+0915 F9                MOV     R1,A
+0916 08                INC     R0
+0917 E2                MOVX    A,@R0
+0918 FA                MOV     R2,A
+0919 08                INC     R0
+091A E2                MOVX    A,@R0
+091B CB                XCH     A,R3
+091C F8                MOV     R0,A
+091D EB                MOV     A,R3
+091E 6F                XRL     A,R7
+091F FF                MOV     R7,A
+0920 EA                MOV     A,R2
+0921 6E                XRL     A,R6
+0922 FE                MOV     R6,A
+0923 E9                MOV     A,R1
+0924 6D                XRL     A,R5
+0925 FD                MOV     R5,A
+0926 E8                MOV     A,R0
+0927 6C                XRL     A,R4
+0928 FC                MOV     R4,A
+0929 7800        R     MOV     R0,#LOW tmp
+092B 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 125
+092E 7800        R     MOV     R0,#LOW ecc
+0930 E2                MOVX    A,@R0
+0931 FB                MOV     R3,A
+0932 08                INC     R0
+0933 E2                MOVX    A,@R0
+0934 F9                MOV     R1,A
+0935 08                INC     R0
+0936 E2                MOVX    A,@R0
+0937 FA                MOV     R2,A
+0938 08                INC     R0
+0939 E2                MOVX    A,@R0
+093A CB                XCH     A,R3
+093B F8                MOV     R0,A
+093C C000              PUSH    AR0
+093E C001              PUSH    AR1
+0940 C002              PUSH    AR2
+0942 C003              PUSH    AR3
+0944 7800        R     MOV     R0,#LOW tmp
+0946 E2                MOVX    A,@R0
+0947 FC                MOV     R4,A
+0948 08                INC     R0
+0949 E2                MOVX    A,@R0
+094A FD                MOV     R5,A
+094B 08                INC     R0
+094C E2                MOVX    A,@R0
+094D FE                MOV     R6,A
+094E 08                INC     R0
+094F E2                MOVX    A,@R0
+0950 FF                MOV     R7,A
+0951 7801              MOV     R0,#01H
+0953 120000      E     LCALL   ?C?LSHL
+0956 7800        R     MOV     R0,#LOW tmp
+0958 E2                MOVX    A,@R0
+0959 FB                MOV     R3,A
+095A 08                INC     R0
+095B E2                MOVX    A,@R0
+095C F9                MOV     R1,A
+095D 08                INC     R0
+095E E2                MOVX    A,@R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 40  
+
+095F FA                MOV     R2,A
+0960 08                INC     R0
+0961 E2                MOVX    A,@R0
+0962 CB                XCH     A,R3
+0963 F8                MOV     R0,A
+0964 EB                MOV     A,R3
+0965 6F                XRL     A,R7
+0966 FF                MOV     R7,A
+0967 EA                MOV     A,R2
+0968 6E                XRL     A,R6
+0969 FE                MOV     R6,A
+096A E9                MOV     A,R1
+096B 6D                XRL     A,R5
+096C FD                MOV     R5,A
+096D E8                MOV     A,R0
+096E 6C                XRL     A,R4
+096F FC                MOV     R4,A
+0970 EF                MOV     A,R7
+0971 5420              ANL     A,#020H
+0973 FF                MOV     R7,A
+0974 E4                CLR     A
+0975 D003              POP     AR3
+0977 D002              POP     AR2
+0979 D001              POP     AR1
+097B D000              POP     AR0
+097D EB                MOV     A,R3
+097E 4F                ORL     A,R7
+097F FF                MOV     R7,A
+0980 EA                MOV     A,R2
+0981 FE                MOV     R6,A
+0982 E9                MOV     A,R1
+0983 FD                MOV     R5,A
+0984 E8                MOV     A,R0
+0985 FC                MOV     R4,A
+0986 7800        R     MOV     R0,#LOW ecc
+0988 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 128
+098B 7800        R     MOV     R0,#LOW parityColTot
+098D E2                MOVX    A,@R0
+098E FC                MOV     R4,A
+098F 08                INC     R0
+0990 E2                MOVX    A,@R0
+0991 FD                MOV     R5,A
+0992 08                INC     R0
+0993 E2                MOVX    A,@R0
+0994 FE                MOV     R6,A
+0995 08                INC     R0
+0996 E2                MOVX    A,@R0
+0997 E4                CLR     A
+0998 FF                MOV     R7,A
+0999 FE                MOV     R6,A
+099A ED                MOV     A,R5
+099B EC                MOV     A,R4
+099C 7800        R     MOV     R0,#LOW tmp
+099E 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 129
+09A1 7800        R     MOV     R0,#LOW tmp
+09A3 E2                MOVX    A,@R0
+09A4 FC                MOV     R4,A
+09A5 08                INC     R0
+09A6 E2                MOVX    A,@R0
+09A7 FD                MOV     R5,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 41  
+
+09A8 08                INC     R0
+09A9 E2                MOVX    A,@R0
+09AA FE                MOV     R6,A
+09AB 08                INC     R0
+09AC E2                MOVX    A,@R0
+09AD FF                MOV     R7,A
+09AE 7810              MOV     R0,#010H
+09B0 120000      E     LCALL   ?C?ULSHR
+09B3 7800        R     MOV     R0,#LOW tmp
+09B5 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 130
+09B8 7800        R     MOV     R0,#LOW tmp
+09BA E2                MOVX    A,@R0
+09BB FC                MOV     R4,A
+09BC 08                INC     R0
+09BD E2                MOVX    A,@R0
+09BE FD                MOV     R5,A
+09BF 08                INC     R0
+09C0 E2                MOVX    A,@R0
+09C1 FE                MOV     R6,A
+09C2 08                INC     R0
+09C3 E2                MOVX    A,@R0
+09C4 FF                MOV     R7,A
+09C5 7808              MOV     R0,#08H
+09C7 120000      E     LCALL   ?C?ULSHR
+09CA 7800        R     MOV     R0,#LOW tmp
+09CC E2                MOVX    A,@R0
+09CD FB                MOV     R3,A
+09CE 08                INC     R0
+09CF E2                MOVX    A,@R0
+09D0 F9                MOV     R1,A
+09D1 08                INC     R0
+09D2 E2                MOVX    A,@R0
+09D3 FA                MOV     R2,A
+09D4 08                INC     R0
+09D5 E2                MOVX    A,@R0
+09D6 CB                XCH     A,R3
+09D7 F8                MOV     R0,A
+09D8 EB                MOV     A,R3
+09D9 6F                XRL     A,R7
+09DA FF                MOV     R7,A
+09DB EA                MOV     A,R2
+09DC 6E                XRL     A,R6
+09DD FE                MOV     R6,A
+09DE E9                MOV     A,R1
+09DF 6D                XRL     A,R5
+09E0 FD                MOV     R5,A
+09E1 E8                MOV     A,R0
+09E2 6C                XRL     A,R4
+09E3 FC                MOV     R4,A
+09E4 7800        R     MOV     R0,#LOW tmp
+09E6 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 131
+09E9 7800        R     MOV     R0,#LOW tmp
+09EB E2                MOVX    A,@R0
+09EC FC                MOV     R4,A
+09ED 08                INC     R0
+09EE E2                MOVX    A,@R0
+09EF FD                MOV     R5,A
+09F0 08                INC     R0
+09F1 E2                MOVX    A,@R0
+09F2 FE                MOV     R6,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 42  
+
+09F3 08                INC     R0
+09F4 E2                MOVX    A,@R0
+09F5 FF                MOV     R7,A
+09F6 7804              MOV     R0,#04H
+09F8 120000      E     LCALL   ?C?ULSHR
+09FB 7800        R     MOV     R0,#LOW tmp
+09FD E2                MOVX    A,@R0
+09FE FB                MOV     R3,A
+09FF 08                INC     R0
+0A00 E2                MOVX    A,@R0
+0A01 F9                MOV     R1,A
+0A02 08                INC     R0
+0A03 E2                MOVX    A,@R0
+0A04 FA                MOV     R2,A
+0A05 08                INC     R0
+0A06 E2                MOVX    A,@R0
+0A07 CB                XCH     A,R3
+0A08 F8                MOV     R0,A
+0A09 EB                MOV     A,R3
+0A0A 6F                XRL     A,R7
+0A0B FF                MOV     R7,A
+0A0C EA                MOV     A,R2
+0A0D 6E                XRL     A,R6
+0A0E FE                MOV     R6,A
+0A0F E9                MOV     A,R1
+0A10 6D                XRL     A,R5
+0A11 FD                MOV     R5,A
+0A12 E8                MOV     A,R0
+0A13 6C                XRL     A,R4
+0A14 FC                MOV     R4,A
+0A15 7800        R     MOV     R0,#LOW tmp
+0A17 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 132
+0A1A 7800        R     MOV     R0,#LOW tmp
+0A1C E2                MOVX    A,@R0
+0A1D FC                MOV     R4,A
+0A1E 08                INC     R0
+0A1F E2                MOVX    A,@R0
+0A20 FD                MOV     R5,A
+0A21 08                INC     R0
+0A22 E2                MOVX    A,@R0
+0A23 FE                MOV     R6,A
+0A24 08                INC     R0
+0A25 E2                MOVX    A,@R0
+0A26 FF                MOV     R7,A
+0A27 7802              MOV     R0,#02H
+0A29 120000      E     LCALL   ?C?LSHL
+0A2C 7800        R     MOV     R0,#LOW tmp
+0A2E E2                MOVX    A,@R0
+0A2F FB                MOV     R3,A
+0A30 08                INC     R0
+0A31 E2                MOVX    A,@R0
+0A32 F9                MOV     R1,A
+0A33 08                INC     R0
+0A34 E2                MOVX    A,@R0
+0A35 FA                MOV     R2,A
+0A36 08                INC     R0
+0A37 E2                MOVX    A,@R0
+0A38 CB                XCH     A,R3
+0A39 F8                MOV     R0,A
+0A3A EB                MOV     A,R3
+0A3B 6F                XRL     A,R7
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 43  
+
+0A3C FF                MOV     R7,A
+0A3D EA                MOV     A,R2
+0A3E 6E                XRL     A,R6
+0A3F FE                MOV     R6,A
+0A40 E9                MOV     A,R1
+0A41 6D                XRL     A,R5
+0A42 FD                MOV     R5,A
+0A43 E8                MOV     A,R0
+0A44 6C                XRL     A,R4
+0A45 FC                MOV     R4,A
+0A46 7800        R     MOV     R0,#LOW tmp
+0A48 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 133
+0A4B 7800        R     MOV     R0,#LOW ecc
+0A4D E2                MOVX    A,@R0
+0A4E FB                MOV     R3,A
+0A4F 08                INC     R0
+0A50 E2                MOVX    A,@R0
+0A51 F9                MOV     R1,A
+0A52 08                INC     R0
+0A53 E2                MOVX    A,@R0
+0A54 FA                MOV     R2,A
+0A55 08                INC     R0
+0A56 E2                MOVX    A,@R0
+0A57 CB                XCH     A,R3
+0A58 F8                MOV     R0,A
+0A59 C000              PUSH    AR0
+0A5B C001              PUSH    AR1
+0A5D C002              PUSH    AR2
+0A5F C003              PUSH    AR3
+0A61 7800        R     MOV     R0,#LOW tmp
+0A63 E2                MOVX    A,@R0
+0A64 FC                MOV     R4,A
+0A65 08                INC     R0
+0A66 E2                MOVX    A,@R0
+0A67 FD                MOV     R5,A
+0A68 08                INC     R0
+0A69 E2                MOVX    A,@R0
+0A6A FE                MOV     R6,A
+0A6B 08                INC     R0
+0A6C E2                MOVX    A,@R0
+0A6D FF                MOV     R7,A
+0A6E 7801              MOV     R0,#01H
+0A70 120000      E     LCALL   ?C?LSHL
+0A73 7800        R     MOV     R0,#LOW tmp
+0A75 E2                MOVX    A,@R0
+0A76 FB                MOV     R3,A
+0A77 08                INC     R0
+0A78 E2                MOVX    A,@R0
+0A79 F9                MOV     R1,A
+0A7A 08                INC     R0
+0A7B E2                MOVX    A,@R0
+0A7C FA                MOV     R2,A
+0A7D 08                INC     R0
+0A7E E2                MOVX    A,@R0
+0A7F CB                XCH     A,R3
+0A80 F8                MOV     R0,A
+0A81 EB                MOV     A,R3
+0A82 6F                XRL     A,R7
+0A83 FF                MOV     R7,A
+0A84 EA                MOV     A,R2
+0A85 6E                XRL     A,R6
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 44  
+
+0A86 FE                MOV     R6,A
+0A87 E9                MOV     A,R1
+0A88 6D                XRL     A,R5
+0A89 FD                MOV     R5,A
+0A8A E8                MOV     A,R0
+0A8B 6C                XRL     A,R4
+0A8C FC                MOV     R4,A
+0A8D EF                MOV     A,R7
+0A8E 5408              ANL     A,#08H
+0A90 FF                MOV     R7,A
+0A91 E4                CLR     A
+0A92 D003              POP     AR3
+0A94 D002              POP     AR2
+0A96 D001              POP     AR1
+0A98 D000              POP     AR0
+0A9A EB                MOV     A,R3
+0A9B 4F                ORL     A,R7
+0A9C FF                MOV     R7,A
+0A9D EA                MOV     A,R2
+0A9E FE                MOV     R6,A
+0A9F E9                MOV     A,R1
+0AA0 FD                MOV     R5,A
+0AA1 E8                MOV     A,R0
+0AA2 FC                MOV     R4,A
+0AA3 7800        R     MOV     R0,#LOW ecc
+0AA5 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 136
+0AA8 7800        R     MOV     R0,#LOW parityColTot
+0AAA E2                MOVX    A,@R0
+0AAB FC                MOV     R4,A
+0AAC 08                INC     R0
+0AAD E2                MOVX    A,@R0
+0AAE FD                MOV     R5,A
+0AAF 08                INC     R0
+0AB0 E2                MOVX    A,@R0
+0AB1 FE                MOV     R6,A
+0AB2 08                INC     R0
+0AB3 E2                MOVX    A,@R0
+0AB4 E4                CLR     A
+0AB5 FF                MOV     R7,A
+0AB6 EE                MOV     A,R6
+0AB7 E4                CLR     A
+0AB8 FD                MOV     R5,A
+0AB9 EC                MOV     A,R4
+0ABA 7800        R     MOV     R0,#LOW tmp
+0ABC 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 137
+0ABF 7800        R     MOV     R0,#LOW tmp
+0AC1 E2                MOVX    A,@R0
+0AC2 FC                MOV     R4,A
+0AC3 08                INC     R0
+0AC4 E2                MOVX    A,@R0
+0AC5 FD                MOV     R5,A
+0AC6 08                INC     R0
+0AC7 E2                MOVX    A,@R0
+0AC8 FE                MOV     R6,A
+0AC9 08                INC     R0
+0ACA E2                MOVX    A,@R0
+0ACB FF                MOV     R7,A
+0ACC 7810              MOV     R0,#010H
+0ACE 120000      E     LCALL   ?C?ULSHR
+0AD1 7800        R     MOV     R0,#LOW tmp
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 45  
+
+0AD3 E2                MOVX    A,@R0
+0AD4 FB                MOV     R3,A
+0AD5 08                INC     R0
+0AD6 E2                MOVX    A,@R0
+0AD7 F9                MOV     R1,A
+0AD8 08                INC     R0
+0AD9 E2                MOVX    A,@R0
+0ADA FA                MOV     R2,A
+0ADB 08                INC     R0
+0ADC E2                MOVX    A,@R0
+0ADD CB                XCH     A,R3
+0ADE F8                MOV     R0,A
+0ADF EB                MOV     A,R3
+0AE0 6F                XRL     A,R7
+0AE1 FF                MOV     R7,A
+0AE2 EA                MOV     A,R2
+0AE3 6E                XRL     A,R6
+0AE4 FE                MOV     R6,A
+0AE5 E9                MOV     A,R1
+0AE6 6D                XRL     A,R5
+0AE7 FD                MOV     R5,A
+0AE8 E8                MOV     A,R0
+0AE9 6C                XRL     A,R4
+0AEA FC                MOV     R4,A
+0AEB 7800        R     MOV     R0,#LOW tmp
+0AED 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 138
+0AF0 7800        R     MOV     R0,#LOW tmp
+0AF2 E2                MOVX    A,@R0
+0AF3 FC                MOV     R4,A
+0AF4 08                INC     R0
+0AF5 E2                MOVX    A,@R0
+0AF6 FD                MOV     R5,A
+0AF7 08                INC     R0
+0AF8 E2                MOVX    A,@R0
+0AF9 FE                MOV     R6,A
+0AFA 08                INC     R0
+0AFB E2                MOVX    A,@R0
+0AFC FF                MOV     R7,A
+0AFD 7808              MOV     R0,#08H
+0AFF 120000      E     LCALL   ?C?ULSHR
+0B02 7800        R     MOV     R0,#LOW tmp
+0B04 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 139
+0B07 7800        R     MOV     R0,#LOW tmp
+0B09 E2                MOVX    A,@R0
+0B0A FC                MOV     R4,A
+0B0B 08                INC     R0
+0B0C E2                MOVX    A,@R0
+0B0D FD                MOV     R5,A
+0B0E 08                INC     R0
+0B0F E2                MOVX    A,@R0
+0B10 FE                MOV     R6,A
+0B11 08                INC     R0
+0B12 E2                MOVX    A,@R0
+0B13 FF                MOV     R7,A
+0B14 7804              MOV     R0,#04H
+0B16 120000      E     LCALL   ?C?ULSHR
+0B19 7800        R     MOV     R0,#LOW tmp
+0B1B E2                MOVX    A,@R0
+0B1C FB                MOV     R3,A
+0B1D 08                INC     R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 46  
+
+0B1E E2                MOVX    A,@R0
+0B1F F9                MOV     R1,A
+0B20 08                INC     R0
+0B21 E2                MOVX    A,@R0
+0B22 FA                MOV     R2,A
+0B23 08                INC     R0
+0B24 E2                MOVX    A,@R0
+0B25 CB                XCH     A,R3
+0B26 F8                MOV     R0,A
+0B27 EB                MOV     A,R3
+0B28 6F                XRL     A,R7
+0B29 FF                MOV     R7,A
+0B2A EA                MOV     A,R2
+0B2B 6E                XRL     A,R6
+0B2C FE                MOV     R6,A
+0B2D E9                MOV     A,R1
+0B2E 6D                XRL     A,R5
+0B2F FD                MOV     R5,A
+0B30 E8                MOV     A,R0
+0B31 6C                XRL     A,R4
+0B32 FC                MOV     R4,A
+0B33 7800        R     MOV     R0,#LOW tmp
+0B35 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 140
+0B38 7800        R     MOV     R0,#LOW tmp
+0B3A E2                MOVX    A,@R0
+0B3B FC                MOV     R4,A
+0B3C 08                INC     R0
+0B3D E2                MOVX    A,@R0
+0B3E FD                MOV     R5,A
+0B3F 08                INC     R0
+0B40 E2                MOVX    A,@R0
+0B41 FE                MOV     R6,A
+0B42 08                INC     R0
+0B43 E2                MOVX    A,@R0
+0B44 FF                MOV     R7,A
+0B45 7802              MOV     R0,#02H
+0B47 120000      E     LCALL   ?C?ULSHR
+0B4A 7800        R     MOV     R0,#LOW tmp
+0B4C E2                MOVX    A,@R0
+0B4D FB                MOV     R3,A
+0B4E 08                INC     R0
+0B4F E2                MOVX    A,@R0
+0B50 F9                MOV     R1,A
+0B51 08                INC     R0
+0B52 E2                MOVX    A,@R0
+0B53 FA                MOV     R2,A
+0B54 08                INC     R0
+0B55 E2                MOVX    A,@R0
+0B56 CB                XCH     A,R3
+0B57 F8                MOV     R0,A
+0B58 EB                MOV     A,R3
+0B59 6F                XRL     A,R7
+0B5A FF                MOV     R7,A
+0B5B EA                MOV     A,R2
+0B5C 6E                XRL     A,R6
+0B5D FE                MOV     R6,A
+0B5E E9                MOV     A,R1
+0B5F 6D                XRL     A,R5
+0B60 FD                MOV     R5,A
+0B61 E8                MOV     A,R0
+0B62 6C                XRL     A,R4
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 47  
+
+0B63 FC                MOV     R4,A
+0B64 7800        R     MOV     R0,#LOW tmp
+0B66 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 141
+0B69 7800        R     MOV     R0,#LOW ecc
+0B6B E2                MOVX    A,@R0
+0B6C FB                MOV     R3,A
+0B6D 08                INC     R0
+0B6E E2                MOVX    A,@R0
+0B6F F9                MOV     R1,A
+0B70 08                INC     R0
+0B71 E2                MOVX    A,@R0
+0B72 FA                MOV     R2,A
+0B73 08                INC     R0
+0B74 E2                MOVX    A,@R0
+0B75 CB                XCH     A,R3
+0B76 F8                MOV     R0,A
+0B77 C000              PUSH    AR0
+0B79 C001              PUSH    AR1
+0B7B C002              PUSH    AR2
+0B7D C003              PUSH    AR3
+0B7F 7800        R     MOV     R0,#LOW tmp
+0B81 E2                MOVX    A,@R0
+0B82 FC                MOV     R4,A
+0B83 08                INC     R0
+0B84 E2                MOVX    A,@R0
+0B85 FD                MOV     R5,A
+0B86 08                INC     R0
+0B87 E2                MOVX    A,@R0
+0B88 FE                MOV     R6,A
+0B89 08                INC     R0
+0B8A E2                MOVX    A,@R0
+0B8B FF                MOV     R7,A
+0B8C 7801              MOV     R0,#01H
+0B8E 120000      E     LCALL   ?C?LSHL
+0B91 7800        R     MOV     R0,#LOW tmp
+0B93 E2                MOVX    A,@R0
+0B94 FB                MOV     R3,A
+0B95 08                INC     R0
+0B96 E2                MOVX    A,@R0
+0B97 F9                MOV     R1,A
+0B98 08                INC     R0
+0B99 E2                MOVX    A,@R0
+0B9A FA                MOV     R2,A
+0B9B 08                INC     R0
+0B9C E2                MOVX    A,@R0
+0B9D CB                XCH     A,R3
+0B9E F8                MOV     R0,A
+0B9F EB                MOV     A,R3
+0BA0 6F                XRL     A,R7
+0BA1 FF                MOV     R7,A
+0BA2 EA                MOV     A,R2
+0BA3 6E                XRL     A,R6
+0BA4 FE                MOV     R6,A
+0BA5 E9                MOV     A,R1
+0BA6 6D                XRL     A,R5
+0BA7 FD                MOV     R5,A
+0BA8 E8                MOV     A,R0
+0BA9 6C                XRL     A,R4
+0BAA FC                MOV     R4,A
+0BAB EF                MOV     A,R7
+0BAC 5402              ANL     A,#02H
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 48  
+
+0BAE FF                MOV     R7,A
+0BAF E4                CLR     A
+0BB0 D003              POP     AR3
+0BB2 D002              POP     AR2
+0BB4 D001              POP     AR1
+0BB6 D000              POP     AR0
+0BB8 EB                MOV     A,R3
+0BB9 4F                ORL     A,R7
+0BBA FF                MOV     R7,A
+0BBB EA                MOV     A,R2
+0BBC FE                MOV     R6,A
+0BBD E9                MOV     A,R1
+0BBE FD                MOV     R5,A
+0BBF E8                MOV     A,R0
+0BC0 FC                MOV     R4,A
+0BC1 7800        R     MOV     R0,#LOW ecc
+0BC3 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 144
+0BC6 7800        R     MOV     R0,#LOW parityColTot
+0BC8 E2                MOVX    A,@R0
+0BC9 FC                MOV     R4,A
+0BCA 08                INC     R0
+0BCB E2                MOVX    A,@R0
+0BCC FD                MOV     R5,A
+0BCD 08                INC     R0
+0BCE E2                MOVX    A,@R0
+0BCF FE                MOV     R6,A
+0BD0 08                INC     R0
+0BD1 E2                MOVX    A,@R0
+0BD2 54F0              ANL     A,#0F0H
+0BD4 FF                MOV     R7,A
+0BD5 EE                MOV     A,R6
+0BD6 54F0              ANL     A,#0F0H
+0BD8 FE                MOV     R6,A
+0BD9 ED                MOV     A,R5
+0BDA 54F0              ANL     A,#0F0H
+0BDC FD                MOV     R5,A
+0BDD EC                MOV     A,R4
+0BDE 54F0              ANL     A,#0F0H
+0BE0 FC                MOV     R4,A
+0BE1 7800        R     MOV     R0,#LOW tmp
+0BE3 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 145
+0BE6 7800        R     MOV     R0,#LOW tmp
+0BE8 E2                MOVX    A,@R0
+0BE9 FC                MOV     R4,A
+0BEA 08                INC     R0
+0BEB E2                MOVX    A,@R0
+0BEC FD                MOV     R5,A
+0BED 08                INC     R0
+0BEE E2                MOVX    A,@R0
+0BEF FE                MOV     R6,A
+0BF0 08                INC     R0
+0BF1 E2                MOVX    A,@R0
+0BF2 FF                MOV     R7,A
+0BF3 7810              MOV     R0,#010H
+0BF5 120000      E     LCALL   ?C?LSHL
+0BF8 7800        R     MOV     R0,#LOW tmp
+0BFA E2                MOVX    A,@R0
+0BFB FB                MOV     R3,A
+0BFC 08                INC     R0
+0BFD E2                MOVX    A,@R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 49  
+
+0BFE F9                MOV     R1,A
+0BFF 08                INC     R0
+0C00 E2                MOVX    A,@R0
+0C01 FA                MOV     R2,A
+0C02 08                INC     R0
+0C03 E2                MOVX    A,@R0
+0C04 CB                XCH     A,R3
+0C05 F8                MOV     R0,A
+0C06 EB                MOV     A,R3
+0C07 6F                XRL     A,R7
+0C08 FF                MOV     R7,A
+0C09 EA                MOV     A,R2
+0C0A 6E                XRL     A,R6
+0C0B FE                MOV     R6,A
+0C0C E9                MOV     A,R1
+0C0D 6D                XRL     A,R5
+0C0E FD                MOV     R5,A
+0C0F E8                MOV     A,R0
+0C10 6C                XRL     A,R4
+0C11 FC                MOV     R4,A
+0C12 7800        R     MOV     R0,#LOW tmp
+0C14 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 146
+0C17 7800        R     MOV     R0,#LOW tmp
+0C19 E2                MOVX    A,@R0
+0C1A FC                MOV     R4,A
+0C1B 08                INC     R0
+0C1C E2                MOVX    A,@R0
+0C1D FD                MOV     R5,A
+0C1E 08                INC     R0
+0C1F E2                MOVX    A,@R0
+0C20 FE                MOV     R6,A
+0C21 08                INC     R0
+0C22 E2                MOVX    A,@R0
+0C23 FF                MOV     R7,A
+0C24 7808              MOV     R0,#08H
+0C26 120000      E     LCALL   ?C?ULSHR
+0C29 7800        R     MOV     R0,#LOW tmp
+0C2B E2                MOVX    A,@R0
+0C2C FB                MOV     R3,A
+0C2D 08                INC     R0
+0C2E E2                MOVX    A,@R0
+0C2F F9                MOV     R1,A
+0C30 08                INC     R0
+0C31 E2                MOVX    A,@R0
+0C32 FA                MOV     R2,A
+0C33 08                INC     R0
+0C34 E2                MOVX    A,@R0
+0C35 CB                XCH     A,R3
+0C36 F8                MOV     R0,A
+0C37 EB                MOV     A,R3
+0C38 6F                XRL     A,R7
+0C39 FF                MOV     R7,A
+0C3A EA                MOV     A,R2
+0C3B 6E                XRL     A,R6
+0C3C FE                MOV     R6,A
+0C3D E9                MOV     A,R1
+0C3E 6D                XRL     A,R5
+0C3F FD                MOV     R5,A
+0C40 E8                MOV     A,R0
+0C41 6C                XRL     A,R4
+0C42 FC                MOV     R4,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 50  
+
+0C43 7800        R     MOV     R0,#LOW tmp
+0C45 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 147
+0C48 7800        R     MOV     R0,#LOW tmp
+0C4A E2                MOVX    A,@R0
+0C4B FC                MOV     R4,A
+0C4C 08                INC     R0
+0C4D E2                MOVX    A,@R0
+0C4E FD                MOV     R5,A
+0C4F 08                INC     R0
+0C50 E2                MOVX    A,@R0
+0C51 FE                MOV     R6,A
+0C52 08                INC     R0
+0C53 E2                MOVX    A,@R0
+0C54 FF                MOV     R7,A
+0C55 7802              MOV     R0,#02H
+0C57 120000      E     LCALL   ?C?LSHL
+0C5A 7800        R     MOV     R0,#LOW tmp
+0C5C E2                MOVX    A,@R0
+0C5D FB                MOV     R3,A
+0C5E 08                INC     R0
+0C5F E2                MOVX    A,@R0
+0C60 F9                MOV     R1,A
+0C61 08                INC     R0
+0C62 E2                MOVX    A,@R0
+0C63 FA                MOV     R2,A
+0C64 08                INC     R0
+0C65 E2                MOVX    A,@R0
+0C66 CB                XCH     A,R3
+0C67 F8                MOV     R0,A
+0C68 EB                MOV     A,R3
+0C69 6F                XRL     A,R7
+0C6A FF                MOV     R7,A
+0C6B EA                MOV     A,R2
+0C6C 6E                XRL     A,R6
+0C6D FE                MOV     R6,A
+0C6E E9                MOV     A,R1
+0C6F 6D                XRL     A,R5
+0C70 FD                MOV     R5,A
+0C71 E8                MOV     A,R0
+0C72 6C                XRL     A,R4
+0C73 FC                MOV     R4,A
+0C74 7800        R     MOV     R0,#LOW tmp
+0C76 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 148
+0C79 7800        R     MOV     R0,#LOW ecc
+0C7B E2                MOVX    A,@R0
+0C7C FB                MOV     R3,A
+0C7D 08                INC     R0
+0C7E E2                MOVX    A,@R0
+0C7F F9                MOV     R1,A
+0C80 08                INC     R0
+0C81 E2                MOVX    A,@R0
+0C82 FA                MOV     R2,A
+0C83 08                INC     R0
+0C84 E2                MOVX    A,@R0
+0C85 CB                XCH     A,R3
+0C86 F8                MOV     R0,A
+0C87 C000              PUSH    AR0
+0C89 C001              PUSH    AR1
+0C8B C002              PUSH    AR2
+0C8D C003              PUSH    AR3
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 51  
+
+0C8F 7800        R     MOV     R0,#LOW tmp
+0C91 E2                MOVX    A,@R0
+0C92 FC                MOV     R4,A
+0C93 08                INC     R0
+0C94 E2                MOVX    A,@R0
+0C95 FD                MOV     R5,A
+0C96 08                INC     R0
+0C97 E2                MOVX    A,@R0
+0C98 FE                MOV     R6,A
+0C99 08                INC     R0
+0C9A E2                MOVX    A,@R0
+0C9B FF                MOV     R7,A
+0C9C 7801              MOV     R0,#01H
+0C9E 120000      E     LCALL   ?C?LSHL
+0CA1 7800        R     MOV     R0,#LOW tmp
+0CA3 E2                MOVX    A,@R0
+0CA4 FB                MOV     R3,A
+0CA5 08                INC     R0
+0CA6 E2                MOVX    A,@R0
+0CA7 F9                MOV     R1,A
+0CA8 08                INC     R0
+0CA9 E2                MOVX    A,@R0
+0CAA FA                MOV     R2,A
+0CAB 08                INC     R0
+0CAC E2                MOVX    A,@R0
+0CAD CB                XCH     A,R3
+0CAE F8                MOV     R0,A
+0CAF EB                MOV     A,R3
+0CB0 6F                XRL     A,R7
+0CB1 FF                MOV     R7,A
+0CB2 EA                MOV     A,R2
+0CB3 6E                XRL     A,R6
+0CB4 FE                MOV     R6,A
+0CB5 E9                MOV     A,R1
+0CB6 6D                XRL     A,R5
+0CB7 FD                MOV     R5,A
+0CB8 E8                MOV     A,R0
+0CB9 6C                XRL     A,R4
+0CBA FC                MOV     R4,A
+0CBB E4                CLR     A
+0CBC ED                MOV     A,R5
+0CBD 5480              ANL     A,#080H
+0CBF FD                MOV     R5,A
+0CC0 E4                CLR     A
+0CC1 D003              POP     AR3
+0CC3 D002              POP     AR2
+0CC5 D001              POP     AR1
+0CC7 D000              POP     AR0
+0CC9 EB                MOV     A,R3
+0CCA FF                MOV     R7,A
+0CCB EA                MOV     A,R2
+0CCC FE                MOV     R6,A
+0CCD E9                MOV     A,R1
+0CCE 4D                ORL     A,R5
+0CCF FD                MOV     R5,A
+0CD0 E8                MOV     A,R0
+0CD1 FC                MOV     R4,A
+0CD2 7800        R     MOV     R0,#LOW ecc
+0CD4 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 151
+0CD7 7800        R     MOV     R0,#LOW parityColTot
+0CD9 E2                MOVX    A,@R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 52  
+
+0CDA FC                MOV     R4,A
+0CDB 08                INC     R0
+0CDC E2                MOVX    A,@R0
+0CDD FD                MOV     R5,A
+0CDE 08                INC     R0
+0CDF E2                MOVX    A,@R0
+0CE0 FE                MOV     R6,A
+0CE1 08                INC     R0
+0CE2 E2                MOVX    A,@R0
+0CE3 54CC              ANL     A,#0CCH
+0CE5 FF                MOV     R7,A
+0CE6 EE                MOV     A,R6
+0CE7 54CC              ANL     A,#0CCH
+0CE9 FE                MOV     R6,A
+0CEA ED                MOV     A,R5
+0CEB 54CC              ANL     A,#0CCH
+0CED FD                MOV     R5,A
+0CEE EC                MOV     A,R4
+0CEF 54CC              ANL     A,#0CCH
+0CF1 FC                MOV     R4,A
+0CF2 7800        R     MOV     R0,#LOW tmp
+0CF4 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 152
+0CF7 7800        R     MOV     R0,#LOW tmp
+0CF9 E2                MOVX    A,@R0
+0CFA FC                MOV     R4,A
+0CFB 08                INC     R0
+0CFC E2                MOVX    A,@R0
+0CFD FD                MOV     R5,A
+0CFE 08                INC     R0
+0CFF E2                MOVX    A,@R0
+0D00 FE                MOV     R6,A
+0D01 08                INC     R0
+0D02 E2                MOVX    A,@R0
+0D03 FF                MOV     R7,A
+0D04 7810              MOV     R0,#010H
+0D06 120000      E     LCALL   ?C?LSHL
+0D09 7800        R     MOV     R0,#LOW tmp
+0D0B E2                MOVX    A,@R0
+0D0C FB                MOV     R3,A
+0D0D 08                INC     R0
+0D0E E2                MOVX    A,@R0
+0D0F F9                MOV     R1,A
+0D10 08                INC     R0
+0D11 E2                MOVX    A,@R0
+0D12 FA                MOV     R2,A
+0D13 08                INC     R0
+0D14 E2                MOVX    A,@R0
+0D15 CB                XCH     A,R3
+0D16 F8                MOV     R0,A
+0D17 EB                MOV     A,R3
+0D18 6F                XRL     A,R7
+0D19 FF                MOV     R7,A
+0D1A EA                MOV     A,R2
+0D1B 6E                XRL     A,R6
+0D1C FE                MOV     R6,A
+0D1D E9                MOV     A,R1
+0D1E 6D                XRL     A,R5
+0D1F FD                MOV     R5,A
+0D20 E8                MOV     A,R0
+0D21 6C                XRL     A,R4
+0D22 FC                MOV     R4,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 53  
+
+0D23 7800        R     MOV     R0,#LOW tmp
+0D25 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 153
+0D28 7800        R     MOV     R0,#LOW tmp
+0D2A E2                MOVX    A,@R0
+0D2B FC                MOV     R4,A
+0D2C 08                INC     R0
+0D2D E2                MOVX    A,@R0
+0D2E FD                MOV     R5,A
+0D2F 08                INC     R0
+0D30 E2                MOVX    A,@R0
+0D31 FE                MOV     R6,A
+0D32 08                INC     R0
+0D33 E2                MOVX    A,@R0
+0D34 FF                MOV     R7,A
+0D35 7808              MOV     R0,#08H
+0D37 120000      E     LCALL   ?C?ULSHR
+0D3A 7800        R     MOV     R0,#LOW tmp
+0D3C E2                MOVX    A,@R0
+0D3D FB                MOV     R3,A
+0D3E 08                INC     R0
+0D3F E2                MOVX    A,@R0
+0D40 F9                MOV     R1,A
+0D41 08                INC     R0
+0D42 E2                MOVX    A,@R0
+0D43 FA                MOV     R2,A
+0D44 08                INC     R0
+0D45 E2                MOVX    A,@R0
+0D46 CB                XCH     A,R3
+0D47 F8                MOV     R0,A
+0D48 EB                MOV     A,R3
+0D49 6F                XRL     A,R7
+0D4A FF                MOV     R7,A
+0D4B EA                MOV     A,R2
+0D4C 6E                XRL     A,R6
+0D4D FE                MOV     R6,A
+0D4E E9                MOV     A,R1
+0D4F 6D                XRL     A,R5
+0D50 FD                MOV     R5,A
+0D51 E8                MOV     A,R0
+0D52 6C                XRL     A,R4
+0D53 FC                MOV     R4,A
+0D54 7800        R     MOV     R0,#LOW tmp
+0D56 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 154
+0D59 7800        R     MOV     R0,#LOW tmp
+0D5B E2                MOVX    A,@R0
+0D5C FC                MOV     R4,A
+0D5D 08                INC     R0
+0D5E E2                MOVX    A,@R0
+0D5F FD                MOV     R5,A
+0D60 08                INC     R0
+0D61 E2                MOVX    A,@R0
+0D62 FE                MOV     R6,A
+0D63 08                INC     R0
+0D64 E2                MOVX    A,@R0
+0D65 FF                MOV     R7,A
+0D66 7804              MOV     R0,#04H
+0D68 120000      E     LCALL   ?C?LSHL
+0D6B 7800        R     MOV     R0,#LOW tmp
+0D6D E2                MOVX    A,@R0
+0D6E FB                MOV     R3,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 54  
+
+0D6F 08                INC     R0
+0D70 E2                MOVX    A,@R0
+0D71 F9                MOV     R1,A
+0D72 08                INC     R0
+0D73 E2                MOVX    A,@R0
+0D74 FA                MOV     R2,A
+0D75 08                INC     R0
+0D76 E2                MOVX    A,@R0
+0D77 CB                XCH     A,R3
+0D78 F8                MOV     R0,A
+0D79 EB                MOV     A,R3
+0D7A 6F                XRL     A,R7
+0D7B FF                MOV     R7,A
+0D7C EA                MOV     A,R2
+0D7D 6E                XRL     A,R6
+0D7E FE                MOV     R6,A
+0D7F E9                MOV     A,R1
+0D80 6D                XRL     A,R5
+0D81 FD                MOV     R5,A
+0D82 E8                MOV     A,R0
+0D83 6C                XRL     A,R4
+0D84 FC                MOV     R4,A
+0D85 7800        R     MOV     R0,#LOW tmp
+0D87 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 155
+0D8A 7800        R     MOV     R0,#LOW tmp
+0D8C E2                MOVX    A,@R0
+0D8D FC                MOV     R4,A
+0D8E 08                INC     R0
+0D8F E2                MOVX    A,@R0
+0D90 FD                MOV     R5,A
+0D91 08                INC     R0
+0D92 E2                MOVX    A,@R0
+0D93 FE                MOV     R6,A
+0D94 08                INC     R0
+0D95 E2                MOVX    A,@R0
+0D96 FF                MOV     R7,A
+0D97 7802              MOV     R0,#02H
+0D99 120000      E     LCALL   ?C?ULSHR
+0D9C 7800        R     MOV     R0,#LOW tmp
+0D9E 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 156
+0DA1 7800        R     MOV     R0,#LOW ecc
+0DA3 E2                MOVX    A,@R0
+0DA4 FB                MOV     R3,A
+0DA5 08                INC     R0
+0DA6 E2                MOVX    A,@R0
+0DA7 F9                MOV     R1,A
+0DA8 08                INC     R0
+0DA9 E2                MOVX    A,@R0
+0DAA FA                MOV     R2,A
+0DAB 08                INC     R0
+0DAC E2                MOVX    A,@R0
+0DAD CB                XCH     A,R3
+0DAE F8                MOV     R0,A
+0DAF C000              PUSH    AR0
+0DB1 C001              PUSH    AR1
+0DB3 C002              PUSH    AR2
+0DB5 C003              PUSH    AR3
+0DB7 7800        R     MOV     R0,#LOW tmp
+0DB9 E2                MOVX    A,@R0
+0DBA FC                MOV     R4,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 55  
+
+0DBB 08                INC     R0
+0DBC E2                MOVX    A,@R0
+0DBD FD                MOV     R5,A
+0DBE 08                INC     R0
+0DBF E2                MOVX    A,@R0
+0DC0 FE                MOV     R6,A
+0DC1 08                INC     R0
+0DC2 E2                MOVX    A,@R0
+0DC3 FF                MOV     R7,A
+0DC4 7801              MOV     R0,#01H
+0DC6 120000      E     LCALL   ?C?LSHL
+0DC9 7800        R     MOV     R0,#LOW tmp
+0DCB E2                MOVX    A,@R0
+0DCC FB                MOV     R3,A
+0DCD 08                INC     R0
+0DCE E2                MOVX    A,@R0
+0DCF F9                MOV     R1,A
+0DD0 08                INC     R0
+0DD1 E2                MOVX    A,@R0
+0DD2 FA                MOV     R2,A
+0DD3 08                INC     R0
+0DD4 E2                MOVX    A,@R0
+0DD5 CB                XCH     A,R3
+0DD6 F8                MOV     R0,A
+0DD7 EB                MOV     A,R3
+0DD8 6F                XRL     A,R7
+0DD9 FF                MOV     R7,A
+0DDA EA                MOV     A,R2
+0DDB 6E                XRL     A,R6
+0DDC FE                MOV     R6,A
+0DDD E9                MOV     A,R1
+0DDE 6D                XRL     A,R5
+0DDF FD                MOV     R5,A
+0DE0 E8                MOV     A,R0
+0DE1 6C                XRL     A,R4
+0DE2 FC                MOV     R4,A
+0DE3 E4                CLR     A
+0DE4 ED                MOV     A,R5
+0DE5 5420              ANL     A,#020H
+0DE7 FD                MOV     R5,A
+0DE8 E4                CLR     A
+0DE9 D003              POP     AR3
+0DEB D002              POP     AR2
+0DED D001              POP     AR1
+0DEF D000              POP     AR0
+0DF1 EB                MOV     A,R3
+0DF2 FF                MOV     R7,A
+0DF3 EA                MOV     A,R2
+0DF4 FE                MOV     R6,A
+0DF5 E9                MOV     A,R1
+0DF6 4D                ORL     A,R5
+0DF7 FD                MOV     R5,A
+0DF8 E8                MOV     A,R0
+0DF9 FC                MOV     R4,A
+0DFA 7800        R     MOV     R0,#LOW ecc
+0DFC 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 159
+0DFF 7800        R     MOV     R0,#LOW parityColTot
+0E01 E2                MOVX    A,@R0
+0E02 FC                MOV     R4,A
+0E03 08                INC     R0
+0E04 E2                MOVX    A,@R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 56  
+
+0E05 FD                MOV     R5,A
+0E06 08                INC     R0
+0E07 E2                MOVX    A,@R0
+0E08 FE                MOV     R6,A
+0E09 08                INC     R0
+0E0A E2                MOVX    A,@R0
+0E0B 54AA              ANL     A,#0AAH
+0E0D FF                MOV     R7,A
+0E0E EE                MOV     A,R6
+0E0F 54AA              ANL     A,#0AAH
+0E11 FE                MOV     R6,A
+0E12 ED                MOV     A,R5
+0E13 54AA              ANL     A,#0AAH
+0E15 FD                MOV     R5,A
+0E16 EC                MOV     A,R4
+0E17 54AA              ANL     A,#0AAH
+0E19 FC                MOV     R4,A
+0E1A 7800        R     MOV     R0,#LOW tmp
+0E1C 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 160
+0E1F 7800        R     MOV     R0,#LOW tmp
+0E21 E2                MOVX    A,@R0
+0E22 FC                MOV     R4,A
+0E23 08                INC     R0
+0E24 E2                MOVX    A,@R0
+0E25 FD                MOV     R5,A
+0E26 08                INC     R0
+0E27 E2                MOVX    A,@R0
+0E28 FE                MOV     R6,A
+0E29 08                INC     R0
+0E2A E2                MOVX    A,@R0
+0E2B FF                MOV     R7,A
+0E2C 7810              MOV     R0,#010H
+0E2E 120000      E     LCALL   ?C?LSHL
+0E31 7800        R     MOV     R0,#LOW tmp
+0E33 E2                MOVX    A,@R0
+0E34 FB                MOV     R3,A
+0E35 08                INC     R0
+0E36 E2                MOVX    A,@R0
+0E37 F9                MOV     R1,A
+0E38 08                INC     R0
+0E39 E2                MOVX    A,@R0
+0E3A FA                MOV     R2,A
+0E3B 08                INC     R0
+0E3C E2                MOVX    A,@R0
+0E3D CB                XCH     A,R3
+0E3E F8                MOV     R0,A
+0E3F EB                MOV     A,R3
+0E40 6F                XRL     A,R7
+0E41 FF                MOV     R7,A
+0E42 EA                MOV     A,R2
+0E43 6E                XRL     A,R6
+0E44 FE                MOV     R6,A
+0E45 E9                MOV     A,R1
+0E46 6D                XRL     A,R5
+0E47 FD                MOV     R5,A
+0E48 E8                MOV     A,R0
+0E49 6C                XRL     A,R4
+0E4A FC                MOV     R4,A
+0E4B 7800        R     MOV     R0,#LOW tmp
+0E4D 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 161
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 57  
+
+0E50 7800        R     MOV     R0,#LOW tmp
+0E52 E2                MOVX    A,@R0
+0E53 FC                MOV     R4,A
+0E54 08                INC     R0
+0E55 E2                MOVX    A,@R0
+0E56 FD                MOV     R5,A
+0E57 08                INC     R0
+0E58 E2                MOVX    A,@R0
+0E59 FE                MOV     R6,A
+0E5A 08                INC     R0
+0E5B E2                MOVX    A,@R0
+0E5C FF                MOV     R7,A
+0E5D 7808              MOV     R0,#08H
+0E5F 120000      E     LCALL   ?C?ULSHR
+0E62 7800        R     MOV     R0,#LOW tmp
+0E64 E2                MOVX    A,@R0
+0E65 FB                MOV     R3,A
+0E66 08                INC     R0
+0E67 E2                MOVX    A,@R0
+0E68 F9                MOV     R1,A
+0E69 08                INC     R0
+0E6A E2                MOVX    A,@R0
+0E6B FA                MOV     R2,A
+0E6C 08                INC     R0
+0E6D E2                MOVX    A,@R0
+0E6E CB                XCH     A,R3
+0E6F F8                MOV     R0,A
+0E70 EB                MOV     A,R3
+0E71 6F                XRL     A,R7
+0E72 FF                MOV     R7,A
+0E73 EA                MOV     A,R2
+0E74 6E                XRL     A,R6
+0E75 FE                MOV     R6,A
+0E76 E9                MOV     A,R1
+0E77 6D                XRL     A,R5
+0E78 FD                MOV     R5,A
+0E79 E8                MOV     A,R0
+0E7A 6C                XRL     A,R4
+0E7B FC                MOV     R4,A
+0E7C 7800        R     MOV     R0,#LOW tmp
+0E7E 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 162
+0E81 7800        R     MOV     R0,#LOW tmp
+0E83 E2                MOVX    A,@R0
+0E84 FC                MOV     R4,A
+0E85 08                INC     R0
+0E86 E2                MOVX    A,@R0
+0E87 FD                MOV     R5,A
+0E88 08                INC     R0
+0E89 E2                MOVX    A,@R0
+0E8A FE                MOV     R6,A
+0E8B 08                INC     R0
+0E8C E2                MOVX    A,@R0
+0E8D FF                MOV     R7,A
+0E8E 7804              MOV     R0,#04H
+0E90 120000      E     LCALL   ?C?ULSHR
+0E93 7800        R     MOV     R0,#LOW tmp
+0E95 E2                MOVX    A,@R0
+0E96 FB                MOV     R3,A
+0E97 08                INC     R0
+0E98 E2                MOVX    A,@R0
+0E99 F9                MOV     R1,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 58  
+
+0E9A 08                INC     R0
+0E9B E2                MOVX    A,@R0
+0E9C FA                MOV     R2,A
+0E9D 08                INC     R0
+0E9E E2                MOVX    A,@R0
+0E9F CB                XCH     A,R3
+0EA0 F8                MOV     R0,A
+0EA1 EB                MOV     A,R3
+0EA2 6F                XRL     A,R7
+0EA3 FF                MOV     R7,A
+0EA4 EA                MOV     A,R2
+0EA5 6E                XRL     A,R6
+0EA6 FE                MOV     R6,A
+0EA7 E9                MOV     A,R1
+0EA8 6D                XRL     A,R5
+0EA9 FD                MOV     R5,A
+0EAA E8                MOV     A,R0
+0EAB 6C                XRL     A,R4
+0EAC FC                MOV     R4,A
+0EAD 7800        R     MOV     R0,#LOW tmp
+0EAF 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 163
+0EB2 7800        R     MOV     R0,#LOW tmp
+0EB4 E2                MOVX    A,@R0
+0EB5 FC                MOV     R4,A
+0EB6 08                INC     R0
+0EB7 E2                MOVX    A,@R0
+0EB8 FD                MOV     R5,A
+0EB9 08                INC     R0
+0EBA E2                MOVX    A,@R0
+0EBB FE                MOV     R6,A
+0EBC 08                INC     R0
+0EBD E2                MOVX    A,@R0
+0EBE FF                MOV     R7,A
+0EBF 7802              MOV     R0,#02H
+0EC1 120000      E     LCALL   ?C?LSHL
+0EC4 7800        R     MOV     R0,#LOW tmp
+0EC6 E2                MOVX    A,@R0
+0EC7 FB                MOV     R3,A
+0EC8 08                INC     R0
+0EC9 E2                MOVX    A,@R0
+0ECA F9                MOV     R1,A
+0ECB 08                INC     R0
+0ECC E2                MOVX    A,@R0
+0ECD FA                MOV     R2,A
+0ECE 08                INC     R0
+0ECF E2                MOVX    A,@R0
+0ED0 CB                XCH     A,R3
+0ED1 F8                MOV     R0,A
+0ED2 EB                MOV     A,R3
+0ED3 6F                XRL     A,R7
+0ED4 FF                MOV     R7,A
+0ED5 EA                MOV     A,R2
+0ED6 6E                XRL     A,R6
+0ED7 FE                MOV     R6,A
+0ED8 E9                MOV     A,R1
+0ED9 6D                XRL     A,R5
+0EDA FD                MOV     R5,A
+0EDB E8                MOV     A,R0
+0EDC 6C                XRL     A,R4
+0EDD FC                MOV     R4,A
+0EDE 7800        R     MOV     R0,#LOW tmp
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 59  
+
+0EE0 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 164
+0EE3 7800        R     MOV     R0,#LOW ecc
+0EE5 E2                MOVX    A,@R0
+0EE6 FB                MOV     R3,A
+0EE7 08                INC     R0
+0EE8 E2                MOVX    A,@R0
+0EE9 F9                MOV     R1,A
+0EEA 08                INC     R0
+0EEB E2                MOVX    A,@R0
+0EEC FA                MOV     R2,A
+0EED 08                INC     R0
+0EEE E2                MOVX    A,@R0
+0EEF CB                XCH     A,R3
+0EF0 F8                MOV     R0,A
+0EF1 C000              PUSH    AR0
+0EF3 7800        R     MOV     R0,#LOW tmp
+0EF5 E2                MOVX    A,@R0
+0EF6 FC                MOV     R4,A
+0EF7 08                INC     R0
+0EF8 E2                MOVX    A,@R0
+0EF9 FD                MOV     R5,A
+0EFA 08                INC     R0
+0EFB E2                MOVX    A,@R0
+0EFC FE                MOV     R6,A
+0EFD 08                INC     R0
+0EFE E2                MOVX    A,@R0
+0EFF E4                CLR     A
+0F00 ED                MOV     A,R5
+0F01 5408              ANL     A,#08H
+0F03 FD                MOV     R5,A
+0F04 E4                CLR     A
+0F05 D000              POP     AR0
+0F07 EB                MOV     A,R3
+0F08 FF                MOV     R7,A
+0F09 EA                MOV     A,R2
+0F0A FE                MOV     R6,A
+0F0B E9                MOV     A,R1
+0F0C 4D                ORL     A,R5
+0F0D FD                MOV     R5,A
+0F0E E8                MOV     A,R0
+0F0F FC                MOV     R4,A
+0F10 7800        R     MOV     R0,#LOW ecc
+0F12 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 166
+0F15 7800        R     MOV     R0,#LOW ecc
+0F17 E2                MOVX    A,@R0
+0F18 FB                MOV     R3,A
+0F19 08                INC     R0
+0F1A E2                MOVX    A,@R0
+0F1B F9                MOV     R1,A
+0F1C 08                INC     R0
+0F1D E2                MOVX    A,@R0
+0F1E FA                MOV     R2,A
+0F1F 08                INC     R0
+0F20 E2                MOVX    A,@R0
+0F21 CB                XCH     A,R3
+0F22 F8                MOV     R0,A
+0F23 C000              PUSH    AR0
+0F25 7800        R     MOV     R0,#LOW uiparity
+0F27 E2                MOVX    A,@R0
+0F28 FC                MOV     R4,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 60  
+
+0F29 08                INC     R0
+0F2A E2                MOVX    A,@R0
+0F2B FD                MOV     R5,A
+0F2C 08                INC     R0
+0F2D E2                MOVX    A,@R0
+0F2E FE                MOV     R6,A
+0F2F 08                INC     R0
+0F30 E2                MOVX    A,@R0
+0F31 5401              ANL     A,#01H
+0F33 FF                MOV     R7,A
+0F34 E4                CLR     A
+0F35 FE                MOV     R6,A
+0F36 FD                MOV     R5,A
+0F37 FC                MOV     R4,A
+0F38 780B              MOV     R0,#0BH
+0F3A 120000      E     LCALL   ?C?LSHL
+0F3D D000              POP     AR0
+0F3F EB                MOV     A,R3
+0F40 4F                ORL     A,R7
+0F41 FF                MOV     R7,A
+0F42 EA                MOV     A,R2
+0F43 4E                ORL     A,R6
+0F44 FE                MOV     R6,A
+0F45 E9                MOV     A,R1
+0F46 4D                ORL     A,R5
+0F47 FD                MOV     R5,A
+0F48 E8                MOV     A,R0
+0F49 4C                ORL     A,R4
+0F4A FC                MOV     R4,A
+0F4B 7800        R     MOV     R0,#LOW ecc
+0F4D 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 167
+0F50 7800        R     MOV     R0,#LOW ecc
+0F52 E2                MOVX    A,@R0
+0F53 FB                MOV     R3,A
+0F54 08                INC     R0
+0F55 E2                MOVX    A,@R0
+0F56 F9                MOV     R1,A
+0F57 08                INC     R0
+0F58 E2                MOVX    A,@R0
+0F59 FA                MOV     R2,A
+0F5A 08                INC     R0
+0F5B E2                MOVX    A,@R0
+0F5C CB                XCH     A,R3
+0F5D F8                MOV     R0,A
+0F5E C000              PUSH    AR0
+0F60 7800        R     MOV     R0,#LOW uiparity
+0F62 E2                MOVX    A,@R0
+0F63 FC                MOV     R4,A
+0F64 08                INC     R0
+0F65 E2                MOVX    A,@R0
+0F66 FD                MOV     R5,A
+0F67 08                INC     R0
+0F68 E2                MOVX    A,@R0
+0F69 FE                MOV     R6,A
+0F6A 08                INC     R0
+0F6B E2                MOVX    A,@R0
+0F6C 5402              ANL     A,#02H
+0F6E FF                MOV     R7,A
+0F6F E4                CLR     A
+0F70 FE                MOV     R6,A
+0F71 FD                MOV     R5,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 61  
+
+0F72 FC                MOV     R4,A
+0F73 780C              MOV     R0,#0CH
+0F75 120000      E     LCALL   ?C?LSHL
+0F78 D000              POP     AR0
+0F7A EB                MOV     A,R3
+0F7B 4F                ORL     A,R7
+0F7C FF                MOV     R7,A
+0F7D EA                MOV     A,R2
+0F7E 4E                ORL     A,R6
+0F7F FE                MOV     R6,A
+0F80 E9                MOV     A,R1
+0F81 4D                ORL     A,R5
+0F82 FD                MOV     R5,A
+0F83 E8                MOV     A,R0
+0F84 4C                ORL     A,R4
+0F85 FC                MOV     R4,A
+0F86 7800        R     MOV     R0,#LOW ecc
+0F88 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 168
+0F8B 7800        R     MOV     R0,#LOW ecc
+0F8D E2                MOVX    A,@R0
+0F8E FB                MOV     R3,A
+0F8F 08                INC     R0
+0F90 E2                MOVX    A,@R0
+0F91 F9                MOV     R1,A
+0F92 08                INC     R0
+0F93 E2                MOVX    A,@R0
+0F94 FA                MOV     R2,A
+0F95 08                INC     R0
+0F96 E2                MOVX    A,@R0
+0F97 CB                XCH     A,R3
+0F98 F8                MOV     R0,A
+0F99 C000              PUSH    AR0
+0F9B 7800        R     MOV     R0,#LOW uiparity
+0F9D E2                MOVX    A,@R0
+0F9E FC                MOV     R4,A
+0F9F 08                INC     R0
+0FA0 E2                MOVX    A,@R0
+0FA1 FD                MOV     R5,A
+0FA2 08                INC     R0
+0FA3 E2                MOVX    A,@R0
+0FA4 FE                MOV     R6,A
+0FA5 08                INC     R0
+0FA6 E2                MOVX    A,@R0
+0FA7 5404              ANL     A,#04H
+0FA9 FF                MOV     R7,A
+0FAA E4                CLR     A
+0FAB FE                MOV     R6,A
+0FAC FD                MOV     R5,A
+0FAD FC                MOV     R4,A
+0FAE 780D              MOV     R0,#0DH
+0FB0 120000      E     LCALL   ?C?LSHL
+0FB3 D000              POP     AR0
+0FB5 EB                MOV     A,R3
+0FB6 4F                ORL     A,R7
+0FB7 FF                MOV     R7,A
+0FB8 EA                MOV     A,R2
+0FB9 4E                ORL     A,R6
+0FBA FE                MOV     R6,A
+0FBB E9                MOV     A,R1
+0FBC 4D                ORL     A,R5
+0FBD FD                MOV     R5,A
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 62  
+
+0FBE E8                MOV     A,R0
+0FBF 4C                ORL     A,R4
+0FC0 FC                MOV     R4,A
+0FC1 7800        R     MOV     R0,#LOW ecc
+0FC3 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 169
+0FC6 7800        R     MOV     R0,#LOW ecc
+0FC8 E2                MOVX    A,@R0
+0FC9 FB                MOV     R3,A
+0FCA 08                INC     R0
+0FCB E2                MOVX    A,@R0
+0FCC F9                MOV     R1,A
+0FCD 08                INC     R0
+0FCE E2                MOVX    A,@R0
+0FCF FA                MOV     R2,A
+0FD0 08                INC     R0
+0FD1 E2                MOVX    A,@R0
+0FD2 CB                XCH     A,R3
+0FD3 F8                MOV     R0,A
+0FD4 C000              PUSH    AR0
+0FD6 7800        R     MOV     R0,#LOW uiparity
+0FD8 E2                MOVX    A,@R0
+0FD9 FC                MOV     R4,A
+0FDA 08                INC     R0
+0FDB E2                MOVX    A,@R0
+0FDC FD                MOV     R5,A
+0FDD 08                INC     R0
+0FDE E2                MOVX    A,@R0
+0FDF FE                MOV     R6,A
+0FE0 08                INC     R0
+0FE1 E2                MOVX    A,@R0
+0FE2 5408              ANL     A,#08H
+0FE4 FF                MOV     R7,A
+0FE5 E4                CLR     A
+0FE6 FE                MOV     R6,A
+0FE7 FD                MOV     R5,A
+0FE8 FC                MOV     R4,A
+0FE9 780E              MOV     R0,#0EH
+0FEB 120000      E     LCALL   ?C?LSHL
+0FEE D000              POP     AR0
+0FF0 EB                MOV     A,R3
+0FF1 4F                ORL     A,R7
+0FF2 FF                MOV     R7,A
+0FF3 EA                MOV     A,R2
+0FF4 4E                ORL     A,R6
+0FF5 FE                MOV     R6,A
+0FF6 E9                MOV     A,R1
+0FF7 4D                ORL     A,R5
+0FF8 FD                MOV     R5,A
+0FF9 E8                MOV     A,R0
+0FFA 4C                ORL     A,R4
+0FFB FC                MOV     R4,A
+0FFC 7800        R     MOV     R0,#LOW ecc
+0FFE 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 171
+1001 7800        R     MOV     R0,#LOW Xorbit
+1003 E2                MOVX    A,@R0
+1004 FC                MOV     R4,A
+1005 08                INC     R0
+1006 E2                MOVX    A,@R0
+1007 FD                MOV     R5,A
+1008 08                INC     R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 63  
+
+1009 E2                MOVX    A,@R0
+100A FE                MOV     R6,A
+100B 08                INC     R0
+100C E2                MOVX    A,@R0
+100D FF                MOV     R7,A
+100E EC                MOV     A,R4
+100F 4D                ORL     A,R5
+1010 4E                ORL     A,R6
+1011 4F                ORL     A,R7
+1012 6042              JZ      ?C0006
+                                           ; SOURCE LINE # 172
+                                           ; SOURCE LINE # 173
+1014 7800        R     MOV     R0,#LOW ecc
+1016 E2                MOVX    A,@R0
+1017 FB                MOV     R3,A
+1018 08                INC     R0
+1019 E2                MOVX    A,@R0
+101A F9                MOV     R1,A
+101B 08                INC     R0
+101C E2                MOVX    A,@R0
+101D FA                MOV     R2,A
+101E 08                INC     R0
+101F E2                MOVX    A,@R0
+1020 CB                XCH     A,R3
+1021 F8                MOV     R0,A
+1022 C000              PUSH    AR0
+1024 7800        R     MOV     R0,#LOW ecc
+1026 E2                MOVX    A,@R0
+1027 FC                MOV     R4,A
+1028 08                INC     R0
+1029 E2                MOVX    A,@R0
+102A FD                MOV     R5,A
+102B 08                INC     R0
+102C E2                MOVX    A,@R0
+102D FE                MOV     R6,A
+102E 08                INC     R0
+102F E2                MOVX    A,@R0
+1030 64AA              XRL     A,#0AAH
+1032 FF                MOV     R7,A
+1033 EE                MOV     A,R6
+1034 64AA              XRL     A,#0AAH
+1036 FE                MOV     R6,A
+1037 ED                MOV     A,R5
+1038 64AA              XRL     A,#0AAH
+103A FD                MOV     R5,A
+103B EC                MOV     A,R4
+103C 7801              MOV     R0,#01H
+103E 120000      E     LCALL   ?C?ULSHR
+1041 D000              POP     AR0
+1043 EB                MOV     A,R3
+1044 4F                ORL     A,R7
+1045 FF                MOV     R7,A
+1046 EA                MOV     A,R2
+1047 4E                ORL     A,R6
+1048 FE                MOV     R6,A
+1049 E9                MOV     A,R1
+104A 4D                ORL     A,R5
+104B FD                MOV     R5,A
+104C E8                MOV     A,R0
+104D 4C                ORL     A,R4
+104E FC                MOV     R4,A
+104F 7800        R     MOV     R0,#LOW ecc
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 64  
+
+1051 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 174
+1054 8035              SJMP    ?C0007
+1056         ?C0006:
+                                           ; SOURCE LINE # 176
+                                           ; SOURCE LINE # 177
+1056 7800        R     MOV     R0,#LOW ecc
+1058 E2                MOVX    A,@R0
+1059 FB                MOV     R3,A
+105A 08                INC     R0
+105B E2                MOVX    A,@R0
+105C F9                MOV     R1,A
+105D 08                INC     R0
+105E E2                MOVX    A,@R0
+105F FA                MOV     R2,A
+1060 08                INC     R0
+1061 E2                MOVX    A,@R0
+1062 CB                XCH     A,R3
+1063 F8                MOV     R0,A
+1064 C000              PUSH    AR0
+1066 7800        R     MOV     R0,#LOW ecc
+1068 E2                MOVX    A,@R0
+1069 FC                MOV     R4,A
+106A 08                INC     R0
+106B E2                MOVX    A,@R0
+106C FD                MOV     R5,A
+106D 08                INC     R0
+106E E2                MOVX    A,@R0
+106F FE                MOV     R6,A
+1070 08                INC     R0
+1071 E2                MOVX    A,@R0
+1072 FF                MOV     R7,A
+1073 7801              MOV     R0,#01H
+1075 120000      E     LCALL   ?C?ULSHR
+1078 D000              POP     AR0
+107A EB                MOV     A,R3
+107B 4F                ORL     A,R7
+107C FF                MOV     R7,A
+107D EA                MOV     A,R2
+107E 4E                ORL     A,R6
+107F FE                MOV     R6,A
+1080 E9                MOV     A,R1
+1081 4D                ORL     A,R5
+1082 FD                MOV     R5,A
+1083 E8                MOV     A,R0
+1084 4C                ORL     A,R4
+1085 FC                MOV     R4,A
+1086 7800        R     MOV     R0,#LOW ecc
+1088 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 178
+108B         ?C0007:
+                                           ; SOURCE LINE # 180
+108B 7800        R     MOV     R0,#LOW ecc
+108D E2                MOVX    A,@R0
+108E FC                MOV     R4,A
+108F 08                INC     R0
+1090 E2                MOVX    A,@R0
+1091 FD                MOV     R5,A
+1092 08                INC     R0
+1093 E2                MOVX    A,@R0
+1094 FE                MOV     R6,A
+1095 08                INC     R0
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 65  
+
+1096 E2                MOVX    A,@R0
+1097 FF                MOV     R7,A
+1098 120000      E     LCALL   ?C?LNOT
+109B 7800        R     MOV     R0,#LOW ecc
+109D 120000      E     LCALL   ?C?LSTPDATA
+                                           ; SOURCE LINE # 181
+10A0 7800        R     MOV     R0,#LOW ecc
+10A2 E2                MOVX    A,@R0
+10A3 FC                MOV     R4,A
+10A4 08                INC     R0
+10A5 E2                MOVX    A,@R0
+10A6 FD                MOV     R5,A
+10A7 08                INC     R0
+10A8 E2                MOVX    A,@R0
+10A9 FE                MOV     R6,A
+10AA 08                INC     R0
+10AB E2                MOVX    A,@R0
+10AC FF                MOV     R7,A
+10AD 7810              MOV     R0,#010H
+10AF 120000      E     LCALL   ?C?ULSHR
+10B2 850082      R     MOV     DPL,ecc_buf+01H
+10B5 850083      R     MOV     DPH,ecc_buf
+10B8 A3                INC     DPTR
+10B9 A3                INC     DPTR
+10BA EF                MOV     A,R7
+10BB F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 182
+10BC 7800        R     MOV     R0,#LOW ecc
+10BE E2                MOVX    A,@R0
+10BF FC                MOV     R4,A
+10C0 08                INC     R0
+10C1 E2                MOVX    A,@R0
+10C2 FD                MOV     R5,A
+10C3 08                INC     R0
+10C4 E2                MOVX    A,@R0
+10C5 FE                MOV     R6,A
+10C6 08                INC     R0
+10C7 E2                MOVX    A,@R0
+10C8 FF                MOV     R7,A
+10C9 7808              MOV     R0,#08H
+10CB 120000      E     LCALL   ?C?ULSHR
+10CE 850082      R     MOV     DPL,ecc_buf+01H
+10D1 850083      R     MOV     DPH,ecc_buf
+10D4 A3                INC     DPTR
+10D5 EF                MOV     A,R7
+10D6 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 183
+10D7 7800        R     MOV     R0,#LOW ecc+03H
+10D9 E2                MOVX    A,@R0
+10DA 850082      R     MOV     DPL,ecc_buf+01H
+10DD 850083      R     MOV     DPH,ecc_buf
+10E0 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 185
+10E1 22                RET     
+             ; FUNCTION _make_ecc_512 (END)
+
+C51 COMPILER V6.14  ECC512                                                                 11/22/2005 16:58:28 PAGE 66  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+uint16_t . . . . . . . . . . . . . . .  TYPEDEF  -----  U_INT    -----  2
+_make_ecc_512. . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  ecc_buf. . . . . . . . . . . . . . .  AUTO     DATA   PTR      0000H  2
+  data_buf . . . . . . . . . . . . . .  * REG *  DATA   PTR      0002H  2
+  i. . . . . . . . . . . . . . . . . .  AUTO     XDATA  U_LONG   0000H  4
+  ALIGN_FACTOR . . . . . . . . . . . .  AUTO     XDATA  U_LONG   0004H  4
+  tmp. . . . . . . . . . . . . . . . .  AUTO     PDATA  U_LONG   0000H  4
+  uiparity . . . . . . . . . . . . . .  AUTO     PDATA  U_LONG   0004H  4
+  parityCol. . . . . . . . . . . . . .  AUTO     PDATA  U_LONG   0008H  4
+  ecc. . . . . . . . . . . . . . . . .  AUTO     PDATA  U_LONG   000CH  4
+  parityCol4321. . . . . . . . . . . .  AUTO     PDATA  U_LONG   0010H  4
+  parityCol4343. . . . . . . . . . . .  AUTO     PDATA  U_LONG   0014H  4
+  parityCol4242. . . . . . . . . . . .  AUTO     PDATA  U_LONG   0018H  4
+  parityColTot . . . . . . . . . . . .  AUTO     PDATA  U_LONG   001CH  4
+  Data . . . . . . . . . . . . . . . .  AUTO     DATA   PTR      0002H  1
+  Xorbit . . . . . . . . . . . . . . .  AUTO     PDATA  U_LONG   0020H  4
+int32_t. . . . . . . . . . . . . . . .  TYPEDEF  -----  LONG     -----  4
+int16_t. . . . . . . . . . . . . . . .  TYPEDEF  -----  INT      -----  2
+eccdiff_t. . . . . . . . . . . . . . .  TYPEDEF  -----  U_CHAR   -----  1
+ECC_NO_ERROR . . . . . . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+ECC_CORRECTABLE_ERROR. . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+uint8_t. . . . . . . . . . . . . . . .  TYPEDEF  -----  U_CHAR   -----  1
+int8_t . . . . . . . . . . . . . . . .  TYPEDEF  -----  CHAR     -----  1
+ECC_ECC_ERROR. . . . . . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+ECC_UNCORRECTABLE_ERROR. . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+uint32_t . . . . . . . . . . . . . . .  TYPEDEF  -----  U_LONG   -----  4
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   4322    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       8
+   PDATA SIZE       =   ----      36
+   DATA SIZE        =   ----       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

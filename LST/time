@@ -1,0 +1,50 @@
+
+
+
+
+writeonepage()              138 + 21 * 511 + 20 * 15 = 11169机器周期		加上	Tprog = 500us
+4136us
+
+readonepage()		    116 + 20 * 15 = 416机器周期		加上    Tr = 12us
+152us
+
+main()中的			172机器周期
+63us
+
+findpage()			451机器周期
+165us
+
+make_ecc_512()          主循环 1573 *(16 + 4) = 30146机器周期     30146 * 6/18432000 = 0.0098
+9800us
+
+
+灌满缓冲区所需的时间：  (1024-512)*10/115200 = 0.04s
+40000us
+
+4136+152*n+63+165+9800<40000
+
+n < 169
+
+make_ecc_512()   耗时  17625us
+writeonepage()   耗时  3375us
+readonepage_c()  耗时  250us
+
+
+readonepage()    耗时  3125us
+
+n > 76
+
+
+记录时实测各函数的执行时间
+
+make_ecc_512()     (170---172) * 125us 
+			Tmax = 21500us
+			Tmin = 21250us
+writonepage()      (31-----33) *125us 
+			Tmax = 4125us
+			Tmin = 3875us
+readonepage_c()    (2-------3) * 125us
+			Tmax = 375us
+			Tmin = 250us
+
+

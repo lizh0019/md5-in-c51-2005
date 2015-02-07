@@ -1,0 +1,774 @@
+; .\OUT\com.SRC generated from: .\com.c
+
+$NOMOD51
+
+NAME	COM
+
+CCF2	BIT	0C0H.2
+CCF3	BIT	0C0H.3
+P0	DATA	080H
+CCF4	BIT	0C0H.4
+P1	DATA	090H
+P2	DATA	0A0H
+AA	BIT	0D8H.2
+P3	DATA	0B0H
+AC	BIT	0D0H.6
+T0	BIT	0B0H.4
+T1	BIT	0B0H.5
+EA	BIT	0A8H.7
+T2	BIT	090H.0
+EC	BIT	0A8H.6
+CF	BIT	0C0H.7
+CH	DATA	0F9H
+FE	BIT	098H.7
+IEN0	DATA	0A8H
+IEN1	DATA	0E8H
+CL	DATA	0E9H
+CCAP0H	DATA	0FAH
+CEX0	BIT	090H.3
+CCAP1H	DATA	0FBH
+CEX1	BIT	090H.4
+CCAP2H	DATA	0FCH
+CP	BIT	0C8H.0
+CEX2	BIT	090H.5
+CCAP3H	DATA	0FDH
+CCAP4H	DATA	0FEH
+CCAP0L	DATA	0EAH
+CR	BIT	0C0H.6
+CCAP1L	DATA	0EBH
+CCAPM0	DATA	0C2H
+EXF2	BIT	0C8H.6
+RD	BIT	0B0H.7
+CCAP2L	DATA	0ECH
+CCAPM1	DATA	0C3H
+CCAP3L	DATA	0EDH
+CCAPM2	DATA	0C4H
+ENS1	BIT	0D8H.6
+CCAP4L	DATA	0EEH
+CCAPM3	DATA	0C5H
+UD	BIT	0D0H.1
+IP	DATA	0B8H
+CCAPM4	DATA	0C6H
+RI	BIT	098H.0
+CY	BIT	0D0H.7
+INT0	BIT	0B0H.2
+SI	BIT	0D8H.3
+INT1	BIT	0B0H.3
+TI	BIT	098H.1
+IE0_	BIT	088H.1
+IE1_	BIT	088H.3
+RCAP2H	DATA	0CBH
+SP	DATA	081H
+CMOD	DATA	0C1H
+CCON	DATA	0C0H
+T2EX	BIT	090H.1
+OV	BIT	0D0H.2
+RCAP2L	DATA	0CAH
+WR	BIT	0B0H.6
+RCLK	BIT	0C8H.5
+TCLK	BIT	0C8H.4
+SBUF	DATA	099H
+P10	BIT	090H.0
+PCON	DATA	087H
+P20	BIT	0A0H.0
+P11	BIT	090H.1
+P21	BIT	0A0H.1
+P12	BIT	090H.2
+P22	BIT	0A0H.2
+P13	BIT	090H.3
+P23	BIT	0A0H.3
+P14	BIT	090H.4
+TMOD	DATA	089H
+TCON	DATA	088H
+AD0	BIT	080H.0
+P24	BIT	0A0H.4
+P15	BIT	090H.5
+AD1	BIT	080H.1
+P25	BIT	0A0H.5
+P16	BIT	090H.6
+AD2	BIT	080H.2
+P26	BIT	0A0H.6
+P17	BIT	090H.7
+AD3	BIT	080H.3
+P27	BIT	0A0H.7
+AD4	BIT	080H.4
+AD5	BIT	080H.5
+AD6	BIT	080H.6
+AD7	BIT	080H.7
+AD8	BIT	0A0H.0
+AD9	BIT	0A0H.1
+AUXR	DATA	08EH
+B	DATA	0F0H
+CR0	BIT	0D8H.0
+CR1	BIT	0D8H.1
+ACC	DATA	0E0H
+CR2	BIT	0D8H.7
+ES0	BIT	0A8H.4
+CT2	BIT	0C8H.1
+ET0	BIT	0A8H.1
+ES1	BIT	0A8H.5
+ET1	BIT	0A8H.3
+TF0	BIT	088H.5
+ET2	BIT	0E8H.0
+TF1	BIT	088H.7
+TF2	BIT	0C8H.7
+RB8	BIT	098H.2
+TH0	DATA	08CH
+EX0	BIT	0A8H.0
+TH1	DATA	08DH
+IT0	BIT	088H.0
+TH2	DATA	0CDH
+EX1	BIT	0A8H.2
+TB8	BIT	098H.3
+IT1	BIT	088H.2
+P	BIT	0D0H.0
+SM0	BIT	098H.7
+TL0	DATA	08AH
+SM1	BIT	098H.6
+ECI	BIT	090H.2
+TL1	DATA	08BH
+TL2	DATA	0CCH
+SM2	BIT	098H.5
+PS0	BIT	0B8H.4
+PT0	BIT	0B8H.2
+PS1	BIT	0B8H.5
+RS0	BIT	0D0H.3
+PT1	BIT	0B8H.3
+RS1	BIT	0D0H.4
+PT2	BIT	0B8H.7
+TR0	BIT	088H.4
+TR1	BIT	088H.6
+TR2	BIT	0C8H.2
+PX0	BIT	0B8H.2
+SDA	BIT	090H.7
+PX1	BIT	0B8H.2
+S1ADR	DATA	0DBH
+DPH	DATA	083H
+S1DAT	DATA	0DAH
+DPL	DATA	082H
+IPH	DATA	0B7H
+SCL	BIT	090H.6
+EXEN2	BIT	0C8H.3
+PPC	BIT	0B8H.6
+S0CON	DATA	098H
+REN	BIT	098H.4
+S1CON	DATA	0D8H
+AD10	BIT	0A0H.2
+T2MOD	DATA	0C9H
+T2CON	DATA	0C8H
+AD11	BIT	0A0H.3
+AD12	BIT	0A0H.4
+STA	BIT	0D8H.5
+AD13	BIT	0A0H.5
+WDTRST	DATA	0A6H
+AD14	BIT	0A0H.6
+AD15	BIT	0A0H.7
+SADEN	DATA	0B9H
+S1STA	DATA	0D9H
+RXD	BIT	0B0H.0
+SADDR	DATA	0A9H
+TXD	BIT	0B0H.1
+AUXR1	DATA	0A2H
+S1IST	DATA	0DCH
+F0	BIT	0D0H.5
+STO	BIT	0D8H.4
+PSW	DATA	0D0H
+CCF0	BIT	0C0H.0
+CCF1	BIT	0C0H.1
+?PR?com_isr?COM      SEGMENT CODE 
+?PR?com_initialize?COM                   SEGMENT CODE 
+?PR?_putbuf?COM      SEGMENT CODE 
+?DT?_putbuf?COM      SEGMENT DATA OVERLAYABLE 
+?PR?_putlenbuf?COM   SEGMENT CODE 
+?DT?_putlenbuf?COM   SEGMENT DATA OVERLAYABLE 
+?PR?_putachar?COM    SEGMENT CODE 
+?PR?_GetKey?COM      SEGMENT CODE 
+?PR?ClearRcvBuf?COM  SEGMENT CODE 
+?XD?COM              SEGMENT XDATA 
+?DT?COM              SEGMENT DATA 
+?BI?COM              SEGMENT BIT 
+	EXTRN	CODE (_strlen)
+	EXTRN	CODE (?C?CLDOPTR)
+	EXTRN	CODE (?C?CSTPTR)
+	PUBLIC	sendfull
+	PUBLIC	sendactive
+	PUBLIC	oend
+	PUBLIC	iend
+	PUBLIC	ostart
+	PUBLIC	istart
+	PUBLIC	outbuf
+	PUBLIC	inbuf
+	PUBLIC	ClearRcvBuf
+	PUBLIC	_GetKey
+	PUBLIC	_putachar
+	PUBLIC	_putlenbuf
+	PUBLIC	_putbuf
+	PUBLIC	com_initialize
+
+	RSEG  ?XD?COM
+          inbuf:   DS   1024
+         outbuf:   DS   512
+
+	RSEG  ?DT?COM
+?_GetKey?BYTE:
+         istart:   DS   2
+         ostart:   DS   2
+           iend:   DS   2
+           oend:   DS   2
+
+	RSEG  ?BI?COM
+     sendactive:   DBIT   1
+       sendfull:   DBIT   1
+; //#include <c8051sr.h>
+; #include "com.h"	
+; #define OLEN 512							// size of serial transmission buffer
+; 
+; int  ostart; 						// transmission buffer start index
+; int  oend; 						// transmission buffer end index
+; unsigned char xdata  outbuf[OLEN]; 			// storage for transmission buffer
+; 
+; 
+; #define ILEN 1024					// size of serial receiving buffer
+; int  istart; 				// receiving buffer start index
+; int  iend; 				// receiving buffer end index
+; unsigned char  xdata inbuf[ILEN]; 			// storage for receiving buffer
+; 
+; bit sendfull; 						// flag: marks transmit buffer full
+; bit sendactive; 					// flag: marks transmitter active
+; 
+; 
+; //Serial Interrupt Service Routine
+CSEG	AT	00023H
+	LJMP	com_isr
+
+; static void com_isr (void) interrupt 4 using 1 
+
+	RSEG  ?PR?com_isr?COM
+	USING	1
+com_isr:
+	PUSH 	ACC
+	PUSH 	DPH
+	PUSH 	DPL
+	PUSH 	PSW
+	USING	1
+	MOV  	PSW,#08H
+			; SOURCE LINE # 20
+; {
+; 	char c;
+; 
+; 	/*----- Received data interrupt. ----------------------------------------*/
+; 	if (RI) 
+			; SOURCE LINE # 25
+	JNB  	RI,?C0001
+; 	{
+			; SOURCE LINE # 26
+; 		c = SBUF; 	// read character
+			; SOURCE LINE # 27
+;---- Variable 'c?040' assigned to Register 'R7' ----
+	MOV  	R7,SBUF
+; 		RI = 0; 	// clear interrupt request flag
+			; SOURCE LINE # 28
+	CLR  	RI
+; 		
+; 		inbuf[iend] = c;
+			; SOURCE LINE # 30
+	MOV  	A,#LOW (inbuf)
+	ADD  	A,iend+01H
+	MOV  	DPL,A
+	MOV  	A,#HIGH (inbuf)
+	ADDC 	A,iend
+	MOV  	DPH,A
+	MOV  	A,R7
+	MOVX 	@DPTR,A
+; 		iend++;
+			; SOURCE LINE # 31
+	INC  	iend+01H
+	MOV  	A,iend+01H
+	JNZ  	?C0030
+	INC  	iend
+?C0030:
+; 
+; 		if(iend >= ILEN)
+			; SOURCE LINE # 33
+	CLR  	C
+	MOV  	A,iend
+	XRL  	A,#080H
+	SUBB 	A,#084H
+	JC   	?C0001
+; 			iend = 0;		
+			; SOURCE LINE # 34
+	MOV  	iend,#00H
+	MOV  	iend+01H,#00H
+; 	}
+			; SOURCE LINE # 35
+?C0001:
+; 
+; 	/*------ Transmitted data interrupt. ------------------------------------*/
+; 	if (TI != 0) 
+			; SOURCE LINE # 38
+	JNB  	TI,?C0007
+; 	{
+			; SOURCE LINE # 39
+; 		TI = 0; // clear interrupt request flag
+			; SOURCE LINE # 40
+	CLR  	TI
+; 		if (ostart != oend) 
+			; SOURCE LINE # 41
+	MOV  	A,ostart+01H
+	XRL  	A,oend+01H
+	JNZ  	?C0031
+	MOV  	A,ostart
+	XRL  	A,oend
+?C0031:
+	JZ   	?C0004
+; 		{ 
+			; SOURCE LINE # 42
+; 			// if characters in buffer and
+; 			SBUF = outbuf[ostart];//++ & (OLEN-1)]; // transmit character
+			; SOURCE LINE # 44
+	MOV  	A,#LOW (outbuf)
+	ADD  	A,ostart+01H
+	MOV  	DPL,A
+	MOV  	A,#HIGH (outbuf)
+	ADDC 	A,ostart
+	MOV  	DPH,A
+	MOVX 	A,@DPTR
+	MOV  	SBUF,A
+; 			ostart++;
+			; SOURCE LINE # 45
+	INC  	ostart+01H
+	MOV  	A,ostart+01H
+	JNZ  	?C0032
+	INC  	ostart
+?C0032:
+; 			if(ostart >= OLEN)
+			; SOURCE LINE # 46
+	CLR  	C
+	MOV  	A,ostart
+	XRL  	A,#080H
+	SUBB 	A,#082H
+	JC   	?C0005
+; 				ostart = 0;
+			; SOURCE LINE # 47
+	MOV  	ostart,#00H
+	MOV  	ostart+01H,#00H
+?C0005:
+; 			sendfull = 0; // clear 'sendfull' flag
+			; SOURCE LINE # 48
+	CLR  	sendfull
+; 		}
+			; SOURCE LINE # 49
+	SJMP 	?C0007
+?C0004:
+; 		else 
+; 		{ 	
+			; SOURCE LINE # 51
+; 			// if all characters transmitted
+; 			sendactive = 0; // clear 'sendactive'
+			; SOURCE LINE # 53
+	CLR  	sendactive
+; 		}
+			; SOURCE LINE # 54
+; 	}
+			; SOURCE LINE # 55
+; }
+			; SOURCE LINE # 56
+?C0007:
+	POP  	PSW
+	POP  	DPL
+	POP  	DPH
+	POP  	ACC
+	RETI 	
+; END OF com_isr
+
+; 
+; // Function to initialize the serial port and the UART baudrate.
+; 
+; void com_initialize (void) 
+
+	RSEG  ?PR?com_initialize?COM
+com_initialize:
+			; SOURCE LINE # 60
+; {
+			; SOURCE LINE # 61
+; 	istart = 0; // empty transmit buffers
+			; SOURCE LINE # 62
+	CLR  	A
+	MOV  	istart,A
+	MOV  	istart+01H,A
+; 	iend = 0;
+			; SOURCE LINE # 63
+	MOV  	iend,A
+	MOV  	iend+01H,A
+; 	ostart = 0; // empty transmit buffers
+			; SOURCE LINE # 64
+	MOV  	ostart,A
+	MOV  	ostart+01H,A
+; 	oend = 0;
+			; SOURCE LINE # 65
+	MOV  	oend,A
+	MOV  	oend+01H,A
+; 	sendactive = 0; // transmitter is not active
+			; SOURCE LINE # 66
+	CLR  	sendactive
+; 	sendfull = 0; // clear 'sendfull' flag
+			; SOURCE LINE # 67
+	CLR  	sendfull
+; 	
+; 	// Configure timer 1 as a baud rate generator
+; 	PCON |= 0x80; // 0x80=SMOD: set serial baudrate doubler
+			; SOURCE LINE # 70
+	ORL  	PCON,#080H
+; 	TMOD |= 0x20; // put timer 1 into MODE 2
+			; SOURCE LINE # 71
+	ORL  	TMOD,#020H
+; 	TH1 = 0xff;
+			; SOURCE LINE # 72
+	MOV  	TH1,#0FFH
+; 	TR1 = 1; // start timer 1
+			; SOURCE LINE # 73
+	SETB 	TR1
+; 	S0CON = 0x50; // serial port MODE 1, enable serial receiver
+			; SOURCE LINE # 74
+	MOV  	S0CON,#050H
+; 	ES0 = 1; // enable serial interrupts
+			; SOURCE LINE # 75
+	SETB 	ES0
+; }
+			; SOURCE LINE # 76
+	RET  	
+; END OF com_initialize
+
+; 
+; //putbuf: write string to SBUF or transmission buffer
+; void putbuf(char *pch)
+
+	RSEG  ?PR?_putbuf?COM
+_putbuf:
+	USING	0
+	MOV  	pch?241,R3
+	MOV  	pch?241+01H,R2
+	MOV  	pch?241+02H,R1
+			; SOURCE LINE # 79
+; {
+			; SOURCE LINE # 80
+; 	int len = strlen(pch);
+			; SOURCE LINE # 81
+	LCALL	_strlen
+;---- Variable 'len?242' assigned to Register 'R4/R5' ----
+	MOV  	R5,AR7
+	MOV  	R4,AR6
+; 	putlenbuf(pch, len);
+			; SOURCE LINE # 82
+	MOV  	R3,pch?241
+	MOV  	R2,pch?241+01H
+	MOV  	R1,pch?241+02H
+	LJMP 	_putlenbuf
+; END OF _putbuf
+
+; }
+; 
+; void putlenbuf (char *pch, int len)
+
+	RSEG  ?PR?_putlenbuf?COM
+_putlenbuf:
+	USING	0
+	MOV  	pch?343,R3
+	MOV  	pch?343+01H,R2
+	MOV  	pch?343+02H,R1
+	MOV  	len?344,R4
+	MOV  	len?344+01H,R5
+			; SOURCE LINE # 85
+; {
+			; SOURCE LINE # 86
+; 	int i;
+; 	for(i = 0 ;i < len ; i++)
+			; SOURCE LINE # 88
+	CLR  	A
+	MOV  	i?345,A
+	MOV  	i?345+01H,A
+?C0010:
+	CLR  	C
+	MOV  	A,i?345+01H
+	SUBB 	A,len?344+01H
+	MOV  	A,len?344
+	XRL  	A,#080H
+	MOV  	R0,A
+	MOV  	A,i?345
+	XRL  	A,#080H
+	SUBB 	A,R0
+	JNC  	?C0016
+; 	{
+			; SOURCE LINE # 89
+; 		do
+; 		{
+			; SOURCE LINE # 91
+; 		}while(putachar(pch[i]) == -1);
+			; SOURCE LINE # 92
+?C0013:
+	MOV  	R3,pch?343
+	MOV  	R2,pch?343+01H
+	MOV  	R1,pch?343+02H
+	MOV  	DPL,i?345+01H
+	MOV  	DPH,i?345
+	LCALL	?C?CLDOPTR
+	MOV  	R7,A
+	LCALL	_putachar
+	MOV  	A,R7
+	CPL  	A
+	JNZ  	?C0033
+	MOV  	A,R6
+	CPL  	A
+?C0033:
+	JZ   	?C0013
+; 	}
+			; SOURCE LINE # 93
+	INC  	i?345+01H
+	MOV  	A,i?345+01H
+	JNZ  	?C0010
+	INC  	i?345
+?C0034:
+	SJMP 	?C0010
+; }
+			; SOURCE LINE # 94
+?C0016:
+	RET  	
+; END OF _putlenbuf
+
+; 
+; //putachar: write a character to SBUF or transmission buffer
+; int putachar (char c) 
+
+	RSEG  ?PR?_putachar?COM
+_putachar:
+	USING	0
+;---- Variable 'c?446' assigned to Register 'R7' ----
+			; SOURCE LINE # 97
+; {
+			; SOURCE LINE # 98
+; 	int endfullflag;
+; 	if (!sendfull) 
+			; SOURCE LINE # 100
+	JB   	sendfull,?C0017
+; 	{ 
+			; SOURCE LINE # 101
+; 		// transmit only if buffer not full
+; 		if (!sendactive) 
+			; SOURCE LINE # 103
+	JB   	sendactive,?C0018
+; 		{ 
+			; SOURCE LINE # 104
+; 			// if transmitter not active:
+; 			sendactive = 1; // transfer first character direct
+			; SOURCE LINE # 106
+	SETB 	sendactive
+; 			SBUF = c; 		// to SBUF to start transmission
+			; SOURCE LINE # 107
+	MOV  	SBUF,R7
+; 		}
+			; SOURCE LINE # 108
+	SJMP 	?C0019
+?C0018:
+; 		else 
+; 		{
+			; SOURCE LINE # 110
+; 			ES0 = 0; 						// disable serial interrupts during buffer update
+			; SOURCE LINE # 111
+	CLR  	ES0
+; 			outbuf[oend] = c; //++ & (OLEN-1)] = c; 	// put char to transmission buffer
+			; SOURCE LINE # 112
+	MOV  	A,#LOW (outbuf)
+	ADD  	A,oend+01H
+	MOV  	DPL,A
+	MOV  	A,#HIGH (outbuf)
+	ADDC 	A,oend
+	MOV  	DPH,A
+	MOV  	A,R7
+	MOVX 	@DPTR,A
+; 			ES0 = 1; // enable serial interrupts again
+			; SOURCE LINE # 113
+	SETB 	ES0
+; 			
+; 			endfullflag = oend + 1;
+			; SOURCE LINE # 115
+	MOV  	A,oend+01H
+	ADD  	A,#01H
+	MOV  	R7,A
+	CLR  	A
+	ADDC 	A,oend
+	MOV  	R6,A
+;---- Variable 'endfullflag?447' assigned to Register 'R6/R7' ----
+; 			if(endfullflag >= OLEN)
+			; SOURCE LINE # 116
+	CLR  	C
+	XRL  	A,#080H
+	SUBB 	A,#082H
+	JC   	?C0020
+; 				endfullflag = 0;
+			; SOURCE LINE # 117
+	CLR  	A
+	MOV  	R6,A
+	MOV  	R7,A
+?C0020:
+; 			if(endfullflag == ostart)
+			; SOURCE LINE # 118
+	MOV  	A,R7
+	CJNE 	A,ostart+01H,?C0021
+	MOV  	A,R6
+	CJNE 	A,ostart,?C0021
+;  		    {
+			; SOURCE LINE # 119
+; 				sendfull = 1;
+			; SOURCE LINE # 120
+	SETB 	sendfull
+; 				return -1;
+			; SOURCE LINE # 121
+	MOV  	R6,#0FFH
+	MOV  	R7,#0FFH
+	RET  	
+; 			}
+			; SOURCE LINE # 122
+?C0021:
+; 			else 
+; 			{
+			; SOURCE LINE # 124
+; 				oend++;
+			; SOURCE LINE # 125
+	INC  	oend+01H
+	MOV  	A,oend+01H
+	JNZ  	?C0036
+	INC  	oend
+?C0036:
+; 				if(oend >= OLEN)
+			; SOURCE LINE # 126
+	CLR  	C
+	MOV  	A,oend
+	XRL  	A,#080H
+	SUBB 	A,#082H
+	JC   	?C0024
+; 					oend = 0;
+			; SOURCE LINE # 127
+	CLR  	A
+	MOV  	oend,A
+	MOV  	oend+01H,A
+?C0024:
+; 					sendfull = 0;
+			; SOURCE LINE # 128
+	CLR  	sendfull
+; 			} // set flag if buffer is full
+			; SOURCE LINE # 129
+; 			
+; 		}
+			; SOURCE LINE # 131
+?C0019:
+; 		return 1;
+			; SOURCE LINE # 132
+	MOV  	R6,#00H
+	MOV  	R7,#01H
+	RET  	
+; 	}
+			; SOURCE LINE # 133
+?C0017:
+; 	else 
+; 		return -1;
+			; SOURCE LINE # 135
+	MOV  	R6,#0FFH
+	MOV  	R7,#0FFH
+; }
+			; SOURCE LINE # 136
+?C0022:
+	RET  	
+; END OF _putachar
+
+; // Replacement routine for the standard library _getkey routine.
+; // The getchar and gets functions uses _getkey to read a character.
+; char GetKey (char * C) 
+
+	RSEG  ?PR?_GetKey?COM
+_GetKey:
+	USING	0
+;---- Variable 'C?548' assigned to Register 'R1/R2/R3' ----
+			; SOURCE LINE # 139
+; {
+			; SOURCE LINE # 140
+; 	//char c;
+; 	//if buffer have no data
+; 	if (iend == istart) 
+			; SOURCE LINE # 143
+	MOV  	A,iend+01H
+	CJNE 	A,istart+01H,?C0026
+	MOV  	A,iend
+	CJNE 	A,istart,?C0026
+; 		return -1;
+			; SOURCE LINE # 144
+	MOV  	R7,#0FFH
+	RET  	
+?C0026:
+; 	ES0 = 0; // disable serial interrupts during buffer update
+			; SOURCE LINE # 145
+	CLR  	ES0
+; 	*C = inbuf[istart];
+			; SOURCE LINE # 146
+	MOV  	A,#LOW (inbuf)
+	ADD  	A,istart+01H
+	MOV  	DPL,A
+	MOV  	A,#HIGH (inbuf)
+	ADDC 	A,istart
+	MOV  	DPH,A
+	MOVX 	A,@DPTR
+	LCALL	?C?CSTPTR
+; 	istart ++;
+			; SOURCE LINE # 147
+	INC  	istart+01H
+	MOV  	A,istart+01H
+	JNZ  	?C0038
+	INC  	istart
+?C0038:
+; 	if(istart >= ILEN)
+			; SOURCE LINE # 148
+	CLR  	C
+	MOV  	A,istart
+	XRL  	A,#080H
+	SUBB 	A,#084H
+	JC   	?C0028
+; 		istart = 0;
+			; SOURCE LINE # 149
+	CLR  	A
+	MOV  	istart,A
+	MOV  	istart+01H,A
+?C0028:
+; 	ES0 = 1; // enable serial interrupts again
+			; SOURCE LINE # 150
+	SETB 	ES0
+; 	return 1;
+			; SOURCE LINE # 151
+	MOV  	R7,#01H
+; }
+			; SOURCE LINE # 152
+?C0027:
+	RET  	
+; END OF _GetKey
+
+; 
+; void ClearRcvBuf()
+
+	RSEG  ?PR?ClearRcvBuf?COM
+ClearRcvBuf:
+			; SOURCE LINE # 154
+; {
+			; SOURCE LINE # 155
+; 	istart = 0; // empty transmit buffers
+			; SOURCE LINE # 156
+	CLR  	A
+	MOV  	istart,A
+	MOV  	istart+01H,A
+; 	iend = 0;
+			; SOURCE LINE # 157
+	MOV  	iend,A
+	MOV  	iend+01H,A
+; }
+			; SOURCE LINE # 158
+	RET  	
+; END OF ClearRcvBuf
+
+	END

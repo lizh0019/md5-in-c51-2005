@@ -1,0 +1,1041 @@
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 1   
+
+
+C51 COMPILER V7.06, COMPILATION OF MODULE COM
+OBJECT MODULE PLACED IN .\OUT\com.obj
+COMPILER INVOKED BY: c:\Keil\C51\BIN\C51.EXE com.c COMPACT BROWSE DEBUG OBJECTEXTEND CODE LISTINCLUDE SYMBOLS PRINT(.\LS
+                    -T\com.lst) OBJECT(.\OUT\com.obj)
+
+stmt level    source
+
+   1          //#include <c8051sr.h>
+   2          #include "com.h"        
+   1      =1  #ifndef __COM_H
+   2      =1  #define __COM_H
+   3      =1  
+   4      =1  #include "reg66x.h"
+   1      =2  /*-------------------------------------------------------------------------
+   2      =2  REG66x.H
+   3      =2  
+   4      =2  Header file for Philips 8xC660/662/664
+   5      =2    
+   6      =2  Copyright (c) 1988-2001 Keil Elektronik GmbH and Keil Software, Inc.
+   7      =2  All rights reserved.
+   8      =2  -------------------------------------------------------------------------*/
+   9      =2  
+  10      =2  sfr  P0      =   0x80;                   
+  11      =2  
+  12      =2  sbit  AD7    =   P0^7;
+  13      =2  sbit  AD6    =   P0^6;
+  14      =2  sbit  AD5    =   P0^5;
+  15      =2  sbit  AD4    =   P0^4;
+  16      =2  sbit  AD3    =   P0^3;
+  17      =2  sbit  AD2    =   P0^2;
+  18      =2  sbit  AD1    =   P0^1;
+  19      =2  sbit  AD0    =   P0^0;
+  20      =2  
+  21      =2  sfr  SP      =   0x81;
+  22      =2  sfr  DPL     =   0x82;
+  23      =2  sfr  DPH     =   0x83;
+  24      =2  
+  25      =2  sfr  PCON    =   0x87;                   
+  26      =2  
+  27      =2  sfr  TCON    =   0x88;             
+  28      =2  
+  29      =2  sbit  TF1    =   TCON^7;
+  30      =2  sbit  TR1    =   TCON^6;
+  31      =2  sbit  TF0    =   TCON^5;
+  32      =2  sbit  TR0    =   TCON^4;
+  33      =2  sbit  IE1_   =   TCON^3;
+  34      =2  sbit  IT1    =   TCON^2;
+  35      =2  sbit  IE0_   =   TCON^1;
+  36      =2  sbit  IT0    =   TCON^0;
+  37      =2  
+  38      =2  sfr  TMOD    =   0x89;                   
+  39      =2  
+  40      =2  sfr  TL0     =   0x8A;                   
+  41      =2  
+  42      =2  sfr  TL1     =   0x8B;                   
+  43      =2  
+  44      =2  sfr  TH0     =   0x8C;                   
+  45      =2  
+  46      =2  sfr  TH1     =   0x8D;                   
+  47      =2  
+  48      =2  sfr  P1      =   0x90;                   
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 2   
+
+  49      =2  
+  50      =2  sbit  SDA     =   P1^7;
+  51      =2  sbit  SCL     =   P1^6;
+  52      =2  sbit  CEX2    =   P1^5;
+  53      =2  sbit  CEX1    =   P1^4;
+  54      =2  sbit  CEX0    =   P1^3;
+  55      =2  sbit  ECI     =   P1^2;
+  56      =2  sbit  T2EX    =   P1^1;
+  57      =2  sbit  T2      =   P1^0;
+  58      =2  
+  59      =2  
+  60      =2  sbit  P17     =   P1^7;
+  61      =2  sbit  P16     =   P1^6;
+  62      =2  sbit  P15    =   P1^5;
+  63      =2  sbit  P14    =   P1^4;
+  64      =2  sbit  P13    =   P1^3;
+  65      =2  sbit  P12     =   P1^2;
+  66      =2  sbit  P11    =   P1^1;
+  67      =2  sbit  P10      =   P1^0;
+  68      =2  
+  69      =2  
+  70      =2  sfr  S0CON    =   0x98;                  
+  71      =2  sfr  S1CON    =   0xD8;
+  72      =2  
+  73      =2  sbit  SM0    =   S0CON^7;
+  74      =2  sbit  FE     =   S0CON^7;
+  75      =2  sbit  SM1    =   S0CON^6;
+  76      =2  sbit  SM2    =   S0CON^5;
+  77      =2  sbit  REN    =   S0CON^4;
+  78      =2  sbit  TB8    =   S0CON^3;
+  79      =2  sbit  RB8    =   S0CON^2;
+  80      =2  sbit  TI     =   S0CON^1;
+  81      =2  sbit  RI     =   S0CON^0;
+  82      =2  
+  83      =2  sbit  CR2    =   S1CON^7;
+  84      =2  sbit  ENS1   =   S1CON^6;
+  85      =2  sbit  STA    =   S1CON^5;
+  86      =2  sbit  STO    =   S1CON^4;
+  87      =2  sbit  SI     =   S1CON^3;
+  88      =2  sbit  AA     =   S1CON^2;
+  89      =2  sbit  CR1    =   S1CON^1;
+  90      =2  sbit  CR0    =   S1CON^0;
+  91      =2  
+  92      =2  sfr  SBUF    =   0x99;                   
+  93      =2  
+  94      =2  sfr  P2      =   0xA0;                   
+  95      =2  
+  96      =2  sbit  AD15    =   P2^7;
+  97      =2  sbit  AD14    =   P2^6;
+  98      =2  sbit  AD13    =   P2^5;
+  99      =2  sbit  AD12    =   P2^4;
+ 100      =2  sbit  AD11    =   P2^3;
+ 101      =2  sbit  AD10    =   P2^2;
+ 102      =2  sbit  AD9     =   P2^1;
+ 103      =2  sbit  AD8     =   P2^0;
+ 104      =2  
+ 105      =2  
+ 106      =2  sbit  P27    =   P2^7;
+ 107      =2  sbit  P26    =   P2^6;
+ 108      =2  sbit  P25    =   P2^5;
+ 109      =2  sbit  P24    =   P2^4;
+ 110      =2  sbit  P23    =   P2^3;
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 3   
+
+ 111      =2  sbit  P22    =   P2^2;
+ 112      =2  sbit  P21    =   P2^1;
+ 113      =2  sbit  P20    =   P2^0;
+ 114      =2  
+ 115      =2  
+ 116      =2  sfr  IEN0    =   0xA8;
+ 117      =2  
+ 118      =2  sbit  EA     =   IEN0^7;
+ 119      =2  sbit  EC     =   IEN0^6;
+ 120      =2  sbit  ES1    =   IEN0^5;
+ 121      =2  sbit  ES0    =   IEN0^4;
+ 122      =2  sbit  ET1    =   IEN0^3;
+ 123      =2  sbit  EX1    =   IEN0^2;
+ 124      =2  sbit  ET0    =   IEN0^1;
+ 125      =2  sbit  EX0    =   IEN0^0;
+ 126      =2  
+ 127      =2  sfr IEN1        = 0xE8;
+ 128      =2  
+ 129      =2  sbit  ET2    =   IEN1^0;
+ 130      =2  
+ 131      =2  
+ 132      =2  sfr  SADDR   =   0xA9;                   
+ 133      =2  
+ 134      =2  sfr  P3      =   0xB0;                   
+ 135      =2  
+ 136      =2  sbit  RD      =   P3^7;
+ 137      =2  sbit  WR      =   P3^6;
+ 138      =2  sbit  T1      =   P3^5;
+ 139      =2  sbit  T0      =   P3^4;
+ 140      =2  sbit  INT1    =   P3^3;
+ 141      =2  sbit  INT0    =   P3^2;
+ 142      =2  sbit  TXD     =   P3^1;
+ 143      =2  sbit  RXD     =   P3^0;
+ 144      =2  
+ 145      =2  sfr  IPH      =   0xB7;                      
+ 146      =2  sfr  IP       =   0xB8;
+ 147      =2  
+ 148      =2  
+ 149      =2  sfr  SADEN   =   0xB9;                   
+ 150      =2          
+ 151      =2  
+ 152      =2  sbit  PT2      =   IP^7;
+ 153      =2  sbit  PPC      =   IP^6;
+ 154      =2  sbit  PS1      =   IP^5;
+ 155      =2  sbit  PS0      =   IP^4;
+ 156      =2  sbit  PT1      =   IP^3;
+ 157      =2  sbit  PX1      =   IP^2;
+ 158      =2  sbit  PT0      =   IP^2;
+ 159      =2  sbit  PX0      =   IP^2;
+ 160      =2  
+ 161      =2  sfr  T2CON   =   0xC8;             
+ 162      =2  
+ 163      =2  sbit  TF2    =   T2CON^7;
+ 164      =2  sbit  EXF2   =   T2CON^6;
+ 165      =2  sbit  RCLK   =   T2CON^5;
+ 166      =2  sbit  TCLK   =   T2CON^4;
+ 167      =2  sbit  EXEN2  =   T2CON^3;
+ 168      =2  sbit  TR2    =   T2CON^2;
+ 169      =2  sbit  CT2    =   T2CON^1;
+ 170      =2  sbit  CP     =   T2CON^0;
+ 171      =2  
+ 172      =2  sfr  T2MOD   =   0xC9;                   
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 4   
+
+ 173      =2  
+ 174      =2  sfr  RCAP2L  =   0xCA;                   
+ 175      =2  sfr  RCAP2H  =   0xCB;                   
+ 176      =2  sfr  TL2     =   0xCC;                   
+ 177      =2  sfr  TH2     =   0xCD;                   
+ 178      =2  
+ 179      =2  sfr  PSW     =   0xD0;                   
+ 180      =2  sbit  CY     =   PSW^7;
+ 181      =2  sbit  AC     =   PSW^6;
+ 182      =2  sbit  F0     =   PSW^5;
+ 183      =2  sbit  RS1    =   PSW^4;
+ 184      =2  sbit  RS0    =   PSW^3;
+ 185      =2  sbit  OV     =   PSW^2;
+ 186      =2  sbit  UD     =   PSW^1;
+ 187      =2  sbit  P      =   PSW^0;
+ 188      =2  
+ 189      =2                           
+ 190      =2  sfr  ACC     =   0xE0;                   
+ 191      =2  sfr  B       =   0xF0;                   
+ 192      =2  
+ 193      =2  sfr  CCON    =   0xC0;  
+ 194      =2  sbit  CF     =   CCON^7;
+ 195      =2  sbit  CR     =   CCON^6;
+ 196      =2  sbit  CCF4   =   CCON^4;
+ 197      =2  sbit  CCF3   =   CCON^3;
+ 198      =2  sbit  CCF2   =   CCON^2;
+ 199      =2  sbit  CCF1   =   CCON^1;
+ 200      =2  sbit  CCF0   =   CCON^0;                 
+ 201      =2  
+ 202      =2  sfr  CMOD    =   0xC1;                   
+ 203      =2  sfr  CCAPM0  =   0xC2;                   
+ 204      =2  sfr  CCAPM1  =   0xC3;                   
+ 205      =2  sfr  CCAPM2  =   0xC4;                   
+ 206      =2  sfr  CCAPM3  =   0xC5;                   
+ 207      =2  sfr  CCAPM4  =   0xC6;  
+ 208      =2  
+ 209      =2  sfr  CL      =   0xE9;                   
+ 210      =2  sfr  CCAP0L  =   0xEA;                   
+ 211      =2  sfr  CCAP1L  =   0xEB;                   
+ 212      =2  sfr  CCAP2L  =   0xEC;                   
+ 213      =2  sfr  CCAP3L  =   0xED;                   
+ 214      =2  sfr  CCAP4L  =   0xEE;                   
+ 215      =2  
+ 216      =2  sfr  CH      =   0xF9;                   
+ 217      =2  sfr  CCAP0H  =   0xFA;                   
+ 218      =2  sfr  CCAP1H  =   0xFB;                    
+ 219      =2  sfr  CCAP2H  =   0xFC;                   
+ 220      =2  sfr  CCAP3H  =   0xFD;                   
+ 221      =2  sfr  CCAP4H  =   0xFE;  
+ 222      =2  
+ 223      =2  
+ 224      =2  
+ 225      =2  sfr AUXR        = 0x8E;
+ 226      =2  sfr AUXR1       = 0xA2;
+ 227      =2  
+ 228      =2  sfr     S1DAT   =       0xDA;
+ 229      =2  sfr     S1IST   =       0xDC;
+ 230      =2  sfr     S1ADR   =       0xDB;
+ 231      =2  sfr     S1STA   =       0xD9;
+ 232      =2  
+ 233      =2  sfr     WDTRST =       0xA6;
+   5      =1  #include <stdio.h>
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 5   
+
+   1      =2  /*--------------------------------------------------------------------------
+   2      =2  STDIO.H
+   3      =2  
+   4      =2  Prototypes for standard I/O functions.
+   5      =2  Copyright (c) 1988-2002 Keil Elektronik GmbH and Keil Software, Inc.
+   6      =2  All rights reserved.
+   7      =2  --------------------------------------------------------------------------*/
+   8      =2  
+   9      =2  #ifndef __STDIO_H__
+  10      =2  #define __STDIO_H__
+  11      =2  
+  12      =2  #ifndef EOF
+  13      =2   #define EOF -1
+  14      =2  #endif
+  15      =2  
+  16      =2  #ifndef NULL
+  17      =2   #define NULL ((void *) 0)
+  18      =2  #endif
+  19      =2  
+  20      =2  #ifndef _SIZE_T
+  21      =2   #define _SIZE_T
+  22      =2   typedef unsigned int size_t;
+  23      =2  #endif
+  24      =2  
+  25      =2  #pragma SAVE
+  26      =2  #pragma REGPARMS
+  27      =2  extern char _getkey (void);
+  28      =2  extern char getchar (void);
+  29      =2  extern char ungetchar (char);
+  30      =2  extern char putchar (char);
+  31      =2  extern int printf   (const char *, ...);
+  32      =2  extern int sprintf  (char *, const char *, ...);
+  33      =2  extern int vprintf  (const char *, char *);
+  34      =2  extern int vsprintf (char *, const char *, char *);
+  35      =2  extern char *gets (char *, int n);
+  36      =2  extern int scanf (const char *, ...);
+  37      =2  extern int sscanf (char *, const char *, ...);
+  38      =2  extern int puts (const char *);
+  39      =2  
+  40      =2  #pragma RESTORE
+  41      =2  
+  42      =2  #endif
+  43      =2  
+   6      =1  #include <string.h>
+   1      =2  /*--------------------------------------------------------------------------
+   2      =2  STRING.H
+   3      =2  
+   4      =2  String functions.
+   5      =2  Copyright (c) 1988-2002 Keil Elektronik GmbH and Keil Software, Inc.
+   6      =2  All rights reserved.
+   7      =2  --------------------------------------------------------------------------*/
+   8      =2  
+   9      =2  #ifndef __STRING_H__
+  10      =2  #define __STRING_H__
+  11      =2  
+  12      =2  #ifndef _SIZE_T
+           =2  #define _SIZE_T
+           =2  typedef unsigned int size_t;
+           =2 #endif
+  16      =2  
+  17      =2  #ifndef NULL
+           =2  #define NULL ((void *) 0L)
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 6   
+
+           =2 #endif
+  20      =2  
+  21      =2  #pragma SAVE
+  22      =2  #pragma REGPARMS
+  23      =2  extern char *strcat (char *s1, char *s2);
+  24      =2  extern char *strncat (char *s1, char *s2, int n);
+  25      =2  
+  26      =2  extern char strcmp (char *s1, char *s2);
+  27      =2  extern char strncmp (char *s1, char *s2, int n);
+  28      =2  
+  29      =2  extern char *strcpy (char *s1, char *s2);
+  30      =2  extern char *strncpy (char *s1, char *s2, int n);
+  31      =2  
+  32      =2  extern int strlen (char *);
+  33      =2  
+  34      =2  extern char *strchr (const char *s, char c);
+  35      =2  extern int strpos (const char *s, char c);
+  36      =2  extern char *strrchr (const char *s, char c);
+  37      =2  extern int strrpos (const char *s, char c);
+  38      =2  
+  39      =2  extern int strspn (char *s, char *set);
+  40      =2  extern int strcspn (char *s, char *set);
+  41      =2  extern char *strpbrk (char *s, char *set);
+  42      =2  extern char *strrpbrk (char *s, char *set);
+  43      =2  extern char *strstr  (char *s, char *sub);
+  44      =2  extern char *strtok  (char *str, const char *set);
+  45      =2  
+  46      =2  extern char memcmp (void *s1, void *s2, int n);
+  47      =2  extern void *memcpy (void *s1, void *s2, int n);
+  48      =2  extern void *memchr (void *s, char val, int n);
+  49      =2  extern void *memccpy (void *s1, void *s2, char val, int n);
+  50      =2  extern void *memmove (void *s1, void *s2, int n);
+  51      =2  extern void *memset  (void *s, char val, int n);
+  52      =2  #pragma RESTORE
+  53      =2  
+  54      =2  #endif
+   7      =1  
+   8      =1  // Function to initialize the serial port and the UART baudrate.
+   9      =1  extern unsigned char xdata Rec_flag;
+  10      =1  
+  11      =1  extern void com_initialize (void); 
+  12      =1  
+  13      =1  //putachar: write a character to SBUF or transmission buffer
+  14      =1  extern int putachar(char c);
+  15      =1  
+  16      =1  //putbuf: write string to SBUF or transmission buffer
+  17      =1  extern void putbuf (char *pch); 
+  18      =1  extern void putlenbuf (char *pch, int len); 
+  19      =1  
+  20      =1  // Replacement routine for the standard library _getkey routine.
+  21      =1  // The getchar and gets functions uses _getkey to read a character.
+  22      =1  extern char GetKey (char * C); 
+  23      =1  
+  24      =1  extern void ClearRcvBuf();
+  25      =1  
+  26      =1  #endif
+  27      =1  
+   3          
+   4          #define OLEN 600                                                        // size of serial transmission buffer
+   5          
+   6          int  ostart;                                            // transmission buffer start index
+   7          int  oend;                                              // transmission buffer end index
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 7   
+
+   8          unsigned char xdata  outbuf[OLEN];                      // storage for transmission buffer
+   9          
+  10          
+  11          #define ILEN 1024                                       // size of serial receiving buffer
+  12          int  istart;                            // receiving buffer start index
+  13          int  iend;                              // receiving buffer end index
+  14          unsigned char  xdata inbuf[ILEN];                       // storage for receiving buffer
+  15          
+  16          bit sendfull;                                           // flag: marks transmit buffer full
+  17          bit sendactive;                                         // flag: marks transmitter active
+  18          
+  19          
+  20          //Serial Interrupt Service Routine
+  21          static void com_isr (void) interrupt 4 using 1 
+  22          {
+  23   1              char c;
+  24   1      
+  25   1              /*----- Received data interrupt. ----------------------------------------*/
+  26   1              if (RI) 
+  27   1              {
+  28   2                      c = SBUF;       // read character
+  29   2                      RI = 0;         // clear interrupt request flag
+  30   2                      
+  31   2                      inbuf[iend] = c;
+  32   2                      iend++;
+  33   2      
+  34   2                      if(iend >= ILEN)
+  35   2                              iend = 0;               
+  36   2              }
+  37   1      
+  38   1              /*------ Transmitted data interrupt. ------------------------------------*/
+  39   1              if (TI != 0) 
+  40   1              {
+  41   2                      
+  42   2                      if (ostart != oend) 
+  43   2                      { 
+  44   3                              // if characters in buffer and
+  45   3                              SBUF = outbuf[ostart];//++ & (OLEN-1)]; // transmit character
+  46   3                              ostart++;
+  47   3                              if(ostart >= OLEN)
+  48   3                                      ostart = 0;
+  49   3                              sendfull = 0; // clear 'sendfull' flag
+  50   3                      }
+  51   2                      else 
+  52   2                      {       
+  53   3                              // if all characters transmitted
+  54   3                              sendactive = 0; // clear 'sendactive'
+  55   3                      }
+  56   2                      TI = 0; // clear interrupt request flag
+  57   2              }
+  58   1      }
+  59          
+  60          // Function to initialize the serial port and the UART baudrate.
+  61          
+  62          void com_initialize (void) 
+  63          {
+  64   1              istart = 0; // empty transmit buffers
+  65   1              iend = 0;
+  66   1              ostart = 0; // empty transmit buffers
+  67   1              oend = 0;
+  68   1              sendactive = 0; // transmitter is not active
+  69   1              sendfull = 0; // clear 'sendfull' flag
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 8   
+
+  70   1              
+  71   1              // Configure timer 1 as a baud rate generator
+  72   1              ///PCON |= 0x80; // 0x80=SMOD: set serial baudrate doubler
+  73   1              ///TMOD |= 0x20; // put timer 1 into MODE 2
+  74   1              ///TH1 = 0xfa;          //0xff 115200 0xe8 4800
+  75   1              ///TR1 = 1; // start timer 1
+  76   1          // Configure timer 2 as a baud rate generator
+  77   1              //add at 04.08.12
+  78   1      
+  79   1              RCAP2H = 0xff;
+  80   1              RCAP2L = 0xe2;
+  81   1      
+  82   1          T2CON  = 0x34;    
+  83   1      
+  84   1              S0CON = 0x50; // serial port MODE 1, enable serial receiver
+  85   1              ES0 = 1; // enable serial interrupts
+  86   1      }
+  87          
+  88          //putbuf: write string to SBUF or transmission buffer
+  89          void putbuf(char *pch)
+  90          {
+  91   1              int len = strlen(pch);
+  92   1              putlenbuf(pch, len);
+  93   1      }
+  94          
+  95          void putlenbuf (char *pch, int len)
+  96          {
+  97   1              int i;
+  98   1              for(i = 0 ;i < len ; i++)
+  99   1              {
+ 100   2                      do
+ 101   2                      {
+ 102   3                      }while(putachar(pch[i]) == -1);
+ 103   2              }
+ 104   1      }
+ 105          
+ 106          //putachar: write a character to SBUF or transmission buffer
+ 107          int putachar (char c) 
+ 108          {
+ 109   1              int endfullflag;
+ 110   1              if (!sendfull) 
+ 111   1              { 
+ 112   2                      // transmit only if buffer not full
+ 113   2                      if (!sendactive) 
+ 114   2                      { 
+ 115   3                              // if transmitter not active:
+ 116   3                              sendactive = 1; // transfer first character direct
+ 117   3                              SBUF = c;               // to SBUF to start transmission
+ 118   3                      }
+ 119   2                      else 
+ 120   2                      {
+ 121   3                              ES0 = 0;                                                // disable serial interrupts during buffer update
+ 122   3                              outbuf[oend] = c; //++ & (OLEN-1)] = c;         // put char to transmission buffer
+ 123   3                              
+ 124   3                              endfullflag = oend + 1;
+ 125   3                              if(endfullflag >= OLEN)
+ 126   3                                      endfullflag = 0;
+ 127   3                              if(endfullflag == ostart)
+ 128   3                          {
+ 129   4                                      sendfull = 1;
+ 130   4                                      ES0 = 1; // enable serial interrupts again
+ 131   4                                      return -1;
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 9   
+
+ 132   4                              }
+ 133   3                              else 
+ 134   3                              {
+ 135   4                                      oend++;
+ 136   4                                      if(oend >= OLEN)
+ 137   4                                              oend = 0;
+ 138   4                                              sendfull = 0;
+ 139   4                              } // set flag if buffer is full
+ 140   3                              
+ 141   3                              ES0 = 1; // enable serial interrupts again
+ 142   3                              
+ 143   3                      }
+ 144   2                      
+ 145   2                      return 1;
+ 146   2              }
+ 147   1              else 
+ 148   1                      return -1;
+ 149   1      }
+ 150          // Replacement routine for the standard library _getkey routine.
+ 151          // The getchar and gets functions uses _getkey to read a character.
+ 152          /*char GetKey (char * C) 
+ 153          {
+ 154                  //char c;
+ 155                  //if buffer have no data
+ 156                  if (iend == istart) 
+ 157                          return -1;
+ 158                  ES0 = 0; // disable serial interrupts during buffer update
+ 159                  *C = inbuf[istart];
+ 160                  istart ++;
+ 161                  if(istart >= ILEN)
+ 162                          istart = 0;
+ 163                  ES0 = 1; // enable serial interrupts again
+ 164                  return 1;
+ 165          }
+ 166          
+ 167          void ClearRcvBuf()
+ 168          {
+ 169                  istart = 0; // empty transmit buffers
+ 170                  iend = 0;
+ 171          }
+ 172          */
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 10  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION com_isr (BEGIN)
+0000 C0E0              PUSH    ACC
+0002 C083              PUSH    DPH
+0004 C082              PUSH    DPL
+0006 C0D0              PUSH    PSW
+0008 75D008            MOV     PSW,#08H
+                                           ; SOURCE LINE # 21
+                                           ; SOURCE LINE # 26
+000B 30982A            JNB     RI,?C0001
+                                           ; SOURCE LINE # 27
+                                           ; SOURCE LINE # 28
+;---- Variable 'c' assigned to Register 'R7' ----
+000E AF99              MOV     R7,SBUF
+                                           ; SOURCE LINE # 29
+0010 C298              CLR     RI
+                                           ; SOURCE LINE # 31
+0012 7800        R     MOV     R0,#LOW iend
+0014 E2                MOVX    A,@R0
+0015 FC                MOV     R4,A
+0016 08                INC     R0
+0017 E2                MOVX    A,@R0
+0018 2400        R     ADD     A,#LOW inbuf
+001A F582              MOV     DPL,A
+001C 7400        R     MOV     A,#HIGH inbuf
+001E 3C                ADDC    A,R4
+001F F583              MOV     DPH,A
+0021 EF                MOV     A,R7
+0022 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 32
+0023 E2                MOVX    A,@R0
+0024 2401              ADD     A,#01H
+0026 F2                MOVX    @R0,A
+0027 18                DEC     R0
+0028 E2                MOVX    A,@R0
+0029 3400              ADDC    A,#00H
+002B F2                MOVX    @R0,A
+                                           ; SOURCE LINE # 34
+002C C3                CLR     C
+002D E2                MOVX    A,@R0
+002E 6480              XRL     A,#080H
+0030 9484              SUBB    A,#084H
+0032 4004              JC      ?C0001
+                                           ; SOURCE LINE # 35
+0034 E4                CLR     A
+0035 F2                MOVX    @R0,A
+0036 08                INC     R0
+0037 F2                MOVX    @R0,A
+                                           ; SOURCE LINE # 36
+0038         ?C0001:
+                                           ; SOURCE LINE # 39
+0038 309944            JNB     TI,?C0007
+                                           ; SOURCE LINE # 40
+                                           ; SOURCE LINE # 42
+003B 7800        R     MOV     R0,#LOW oend
+003D E2                MOVX    A,@R0
+003E FE                MOV     R6,A
+003F 08                INC     R0
+0040 E2                MOVX    A,@R0
+0041 FF                MOV     R7,A
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 11  
+
+0042 7800        R     MOV     R0,#LOW ostart
+0044 E2                MOVX    A,@R0
+0045 FC                MOV     R4,A
+0046 08                INC     R0
+0047 E2                MOVX    A,@R0
+0048 FD                MOV     R5,A
+0049 6F                XRL     A,R7
+004A 7002              JNZ     ?C0026
+004C EC                MOV     A,R4
+004D 6E                XRL     A,R6
+004E         ?C0026:
+004E 602B              JZ      ?C0004
+                                           ; SOURCE LINE # 43
+                                           ; SOURCE LINE # 45
+0050 7400        R     MOV     A,#LOW outbuf
+0052 2D                ADD     A,R5
+0053 F582              MOV     DPL,A
+0055 7400        R     MOV     A,#HIGH outbuf
+0057 3C                ADDC    A,R4
+0058 F583              MOV     DPH,A
+005A E0                MOVX    A,@DPTR
+005B F599              MOV     SBUF,A
+                                           ; SOURCE LINE # 46
+005D E2                MOVX    A,@R0
+005E 2401              ADD     A,#01H
+0060 F2                MOVX    @R0,A
+0061 18                DEC     R0
+0062 E2                MOVX    A,@R0
+0063 3400              ADDC    A,#00H
+0065 F2                MOVX    @R0,A
+                                           ; SOURCE LINE # 47
+0066 C3                CLR     C
+0067 08                INC     R0
+0068 E2                MOVX    A,@R0
+0069 9458              SUBB    A,#058H
+006B 18                DEC     R0
+006C E2                MOVX    A,@R0
+006D 6480              XRL     A,#080H
+006F 9482              SUBB    A,#082H
+0071 4004              JC      ?C0005
+                                           ; SOURCE LINE # 48
+0073 E4                CLR     A
+0074 F2                MOVX    @R0,A
+0075 08                INC     R0
+0076 F2                MOVX    @R0,A
+0077         ?C0005:
+                                           ; SOURCE LINE # 49
+0077 C200        R     CLR     sendfull
+                                           ; SOURCE LINE # 50
+0079 8002              SJMP    ?C0006
+007B         ?C0004:
+                                           ; SOURCE LINE # 52
+                                           ; SOURCE LINE # 54
+007B C200        R     CLR     sendactive
+                                           ; SOURCE LINE # 55
+007D         ?C0006:
+                                           ; SOURCE LINE # 56
+007D C299              CLR     TI
+                                           ; SOURCE LINE # 57
+                                           ; SOURCE LINE # 58
+007F         ?C0007:
+007F D0D0              POP     PSW
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 12  
+
+0081 D082              POP     DPL
+0083 D083              POP     DPH
+0085 D0E0              POP     ACC
+0087 32                RETI    
+             ; FUNCTION com_isr (END)
+
+             ; FUNCTION com_initialize (BEGIN)
+                                           ; SOURCE LINE # 62
+                                           ; SOURCE LINE # 63
+                                           ; SOURCE LINE # 64
+0000 E4                CLR     A
+0001 7800        R     MOV     R0,#LOW istart
+0003 F2                MOVX    @R0,A
+0004 08                INC     R0
+0005 F2                MOVX    @R0,A
+                                           ; SOURCE LINE # 65
+0006 7800        R     MOV     R0,#LOW iend
+0008 F2                MOVX    @R0,A
+0009 08                INC     R0
+000A F2                MOVX    @R0,A
+                                           ; SOURCE LINE # 66
+000B 7800        R     MOV     R0,#LOW ostart
+000D F2                MOVX    @R0,A
+000E 08                INC     R0
+000F F2                MOVX    @R0,A
+                                           ; SOURCE LINE # 67
+0010 7800        R     MOV     R0,#LOW oend
+0012 F2                MOVX    @R0,A
+0013 08                INC     R0
+0014 F2                MOVX    @R0,A
+                                           ; SOURCE LINE # 68
+0015 C200        R     CLR     sendactive
+                                           ; SOURCE LINE # 69
+0017 C200        R     CLR     sendfull
+                                           ; SOURCE LINE # 79
+0019 75CBFF            MOV     RCAP2H,#0FFH
+                                           ; SOURCE LINE # 80
+001C 75CAE2            MOV     RCAP2L,#0E2H
+                                           ; SOURCE LINE # 82
+001F 75C834            MOV     T2CON,#034H
+                                           ; SOURCE LINE # 84
+0022 759850            MOV     S0CON,#050H
+                                           ; SOURCE LINE # 85
+0025 D2AC              SETB    ES0
+                                           ; SOURCE LINE # 86
+0027 22                RET     
+             ; FUNCTION com_initialize (END)
+
+             ; FUNCTION _putbuf (BEGIN)
+                                           ; SOURCE LINE # 89
+0000 7800        R     MOV     R0,#LOW pch
+0002 EB                MOV     A,R3
+0003 F2                MOVX    @R0,A
+0004 08                INC     R0
+0005 EA                MOV     A,R2
+0006 F2                MOVX    @R0,A
+0007 08                INC     R0
+0008 E9                MOV     A,R1
+0009 F2                MOVX    @R0,A
+                                           ; SOURCE LINE # 90
+                                           ; SOURCE LINE # 91
+000A 120000      E     LCALL   _strlen
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 13  
+
+;---- Variable 'len' assigned to Register 'R6/R7' ----
+                                           ; SOURCE LINE # 92
+000D 7800        R     MOV     R0,#LOW pch
+000F E2                MOVX    A,@R0
+0010 FB                MOV     R3,A
+0011 08                INC     R0
+0012 E2                MOVX    A,@R0
+0013 FA                MOV     R2,A
+0014 08                INC     R0
+0015 E2                MOVX    A,@R0
+0016 F9                MOV     R1,A
+0017 AD07              MOV     R5,AR7
+0019 AC06              MOV     R4,AR6
+001B 020000      R     LJMP    _putlenbuf
+             ; FUNCTION _putbuf (END)
+
+             ; FUNCTION _putlenbuf (BEGIN)
+                                           ; SOURCE LINE # 95
+0000 7800        R     MOV     R0,#LOW pch
+0002 EB                MOV     A,R3
+0003 F2                MOVX    @R0,A
+0004 08                INC     R0
+0005 EA                MOV     A,R2
+0006 F2                MOVX    @R0,A
+0007 08                INC     R0
+0008 E9                MOV     A,R1
+0009 F2                MOVX    @R0,A
+000A 08                INC     R0
+000B EC                MOV     A,R4
+000C F2                MOVX    @R0,A
+000D 08                INC     R0
+000E ED                MOV     A,R5
+000F F2                MOVX    @R0,A
+                                           ; SOURCE LINE # 96
+                                           ; SOURCE LINE # 98
+0010 E4                CLR     A
+0011 08                INC     R0
+0012 F2                MOVX    @R0,A
+0013 08                INC     R0
+0014 F2                MOVX    @R0,A
+0015         ?C0010:
+0015 7800        R     MOV     R0,#LOW len
+0017 E2                MOVX    A,@R0
+0018 FE                MOV     R6,A
+0019 08                INC     R0
+001A E2                MOVX    A,@R0
+001B FF                MOV     R7,A
+001C C3                CLR     C
+001D 7800        R     MOV     R0,#LOW i+01H
+001F E2                MOVX    A,@R0
+0020 9F                SUBB    A,R7
+0021 EE                MOV     A,R6
+0022 6480              XRL     A,#080H
+0024 F5F0              MOV     B,A
+0026 18                DEC     R0
+0027 E2                MOVX    A,@R0
+0028 6480              XRL     A,#080H
+002A 95F0              SUBB    A,B
+002C 5030              JNC     ?C0016
+                                           ; SOURCE LINE # 99
+                                           ; SOURCE LINE # 101
+                                           ; SOURCE LINE # 102
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 14  
+
+002E         ?C0013:
+002E 7800        R     MOV     R0,#LOW pch
+0030 E2                MOVX    A,@R0
+0031 FB                MOV     R3,A
+0032 08                INC     R0
+0033 E2                MOVX    A,@R0
+0034 FA                MOV     R2,A
+0035 08                INC     R0
+0036 E2                MOVX    A,@R0
+0037 F9                MOV     R1,A
+0038 7800        R     MOV     R0,#LOW i
+003A E2                MOVX    A,@R0
+003B FE                MOV     R6,A
+003C 08                INC     R0
+003D E2                MOVX    A,@R0
+003E F582              MOV     DPL,A
+0040 8E83              MOV     DPH,R6
+0042 120000      E     LCALL   ?C?CLDOPTR
+0045 FF                MOV     R7,A
+0046 120000      R     LCALL   _putachar
+0049 EF                MOV     A,R7
+004A F4                CPL     A
+004B 7002              JNZ     ?C0027
+004D EE                MOV     A,R6
+004E F4                CPL     A
+004F         ?C0027:
+004F 60DD              JZ      ?C0013
+                                           ; SOURCE LINE # 103
+0051 7800        R     MOV     R0,#LOW i+01H
+0053 E2                MOVX    A,@R0
+0054 2401              ADD     A,#01H
+0056 F2                MOVX    @R0,A
+0057 18                DEC     R0
+0058 E2                MOVX    A,@R0
+0059 3400              ADDC    A,#00H
+005B F2                MOVX    @R0,A
+005C 80B7              SJMP    ?C0010
+                                           ; SOURCE LINE # 104
+005E         ?C0016:
+005E 22                RET     
+             ; FUNCTION _putlenbuf (END)
+
+             ; FUNCTION _putachar (BEGIN)
+                                           ; SOURCE LINE # 107
+;---- Variable 'c' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 108
+                                           ; SOURCE LINE # 110
+0000 200068      R     JB      sendfull,?C0017
+                                           ; SOURCE LINE # 111
+                                           ; SOURCE LINE # 113
+0003 200006      R     JB      sendactive,?C0018
+                                           ; SOURCE LINE # 114
+                                           ; SOURCE LINE # 116
+0006 D200        R     SETB    sendactive
+                                           ; SOURCE LINE # 117
+0008 8F99              MOV     SBUF,R7
+                                           ; SOURCE LINE # 118
+000A 805A              SJMP    ?C0019
+000C         ?C0018:
+                                           ; SOURCE LINE # 120
+                                           ; SOURCE LINE # 121
+000C C2AC              CLR     ES0
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 15  
+
+                                           ; SOURCE LINE # 122
+000E 7800        R     MOV     R0,#LOW oend
+0010 E2                MOVX    A,@R0
+0011 FC                MOV     R4,A
+0012 08                INC     R0
+0013 E2                MOVX    A,@R0
+0014 FD                MOV     R5,A
+0015 2400        R     ADD     A,#LOW outbuf
+0017 F582              MOV     DPL,A
+0019 7400        R     MOV     A,#HIGH outbuf
+001B 3C                ADDC    A,R4
+001C F583              MOV     DPH,A
+001E EF                MOV     A,R7
+001F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 124
+0020 ED                MOV     A,R5
+0021 2401              ADD     A,#01H
+0023 FF                MOV     R7,A
+0024 E4                CLR     A
+0025 3C                ADDC    A,R4
+0026 FE                MOV     R6,A
+;---- Variable 'endfullflag' assigned to Register 'R6/R7' ----
+                                           ; SOURCE LINE # 125
+0027 C3                CLR     C
+0028 EF                MOV     A,R7
+0029 9458              SUBB    A,#058H
+002B EE                MOV     A,R6
+002C 6480              XRL     A,#080H
+002E 9482              SUBB    A,#082H
+0030 4003              JC      ?C0020
+                                           ; SOURCE LINE # 126
+0032 E4                CLR     A
+0033 FE                MOV     R6,A
+0034 FF                MOV     R7,A
+0035         ?C0020:
+                                           ; SOURCE LINE # 127
+0035 7800        R     MOV     R0,#LOW ostart+01H
+0037 E2                MOVX    A,@R0
+0038 B5070B            CJNE    A,AR7,?C0021
+003B 18                DEC     R0
+003C E2                MOVX    A,@R0
+003D B50606            CJNE    A,AR6,?C0021
+                                           ; SOURCE LINE # 128
+                                           ; SOURCE LINE # 129
+0040 D200        R     SETB    sendfull
+                                           ; SOURCE LINE # 130
+0042 D2AC              SETB    ES0
+                                           ; SOURCE LINE # 131
+0044 8025              SJMP    ?C0029
+                                           ; SOURCE LINE # 132
+0046         ?C0021:
+                                           ; SOURCE LINE # 134
+                                           ; SOURCE LINE # 135
+0046 7800        R     MOV     R0,#LOW oend+01H
+0048 E2                MOVX    A,@R0
+0049 2401              ADD     A,#01H
+004B F2                MOVX    @R0,A
+004C 18                DEC     R0
+004D E2                MOVX    A,@R0
+004E 3400              ADDC    A,#00H
+0050 F2                MOVX    @R0,A
+                                           ; SOURCE LINE # 136
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 16  
+
+0051 C3                CLR     C
+0052 08                INC     R0
+0053 E2                MOVX    A,@R0
+0054 9458              SUBB    A,#058H
+0056 18                DEC     R0
+0057 E2                MOVX    A,@R0
+0058 6480              XRL     A,#080H
+005A 9482              SUBB    A,#082H
+005C 4004              JC      ?C0024
+                                           ; SOURCE LINE # 137
+005E E4                CLR     A
+005F F2                MOVX    @R0,A
+0060 08                INC     R0
+0061 F2                MOVX    @R0,A
+0062         ?C0024:
+                                           ; SOURCE LINE # 138
+0062 C200        R     CLR     sendfull
+                                           ; SOURCE LINE # 139
+0064         ?C0023:
+                                           ; SOURCE LINE # 141
+0064 D2AC              SETB    ES0
+                                           ; SOURCE LINE # 143
+0066         ?C0019:
+                                           ; SOURCE LINE # 145
+0066 7E00              MOV     R6,#00H
+0068 7F01              MOV     R7,#01H
+006A 22                RET     
+                                           ; SOURCE LINE # 146
+006B         ?C0017:
+                                           ; SOURCE LINE # 148
+006B         ?C0029:
+006B 7EFF              MOV     R6,#0FFH
+006D 7FFF              MOV     R7,#0FFH
+                                           ; SOURCE LINE # 149
+006F         ?C0022:
+006F 22                RET     
+             ; FUNCTION _putachar (END)
+
+C51 COMPILER V7.06   COM                                                                   12/01/2005 19:02:47 PAGE 17  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+P0 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0080H  1
+P1 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0090H  1
+P2 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00A0H  1
+P3 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B0H  1
+IEN0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00A8H  1
+IEN1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00E8H  1
+size_t . . . . . . . . . . . . . . . .  TYPEDEF  -----  U_INT    -----  2
+inbuf. . . . . . . . . . . . . . . . .  PUBLIC   XDATA  ARRAY    0000H  1024
+outbuf . . . . . . . . . . . . . . . .  PUBLIC   XDATA  ARRAY    0400H  600
+IP . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B8H  1
+istart . . . . . . . . . . . . . . . .  PUBLIC   PDATA  INT      0000H  2
+RI . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0098H  1
+TI . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0099H  1
+ostart . . . . . . . . . . . . . . . .  PUBLIC   PDATA  INT      0002H  2
+iend . . . . . . . . . . . . . . . . .  PUBLIC   PDATA  INT      0004H  2
+RCAP2H . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CBH  1
+CCON . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C0H  1
+RCAP2L . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CAH  1
+oend . . . . . . . . . . . . . . . . .  PUBLIC   PDATA  INT      0006H  2
+sendactive . . . . . . . . . . . . . .  PUBLIC   DATA   BIT      0000H  1
+SBUF . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0099H  1
+TCON . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0088H  1
+_putlenbuf . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  pch. . . . . . . . . . . . . . . . .  AUTO     PDATA  PTR      0000H  3
+  len. . . . . . . . . . . . . . . . .  AUTO     PDATA  INT      0003H  2
+  i. . . . . . . . . . . . . . . . . .  AUTO     PDATA  INT      0005H  2
+_putachar. . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  c. . . . . . . . . . . . . . . . . .  * REG *  DATA   CHAR     0007H  1
+  endfullflag. . . . . . . . . . . . .  * REG *  DATA   INT      0006H  2
+ES0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00ACH  1
+com_initialize . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+sendfull . . . . . . . . . . . . . . .  PUBLIC   DATA   BIT      0001H  1
+S0CON. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0098H  1
+S1CON. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D8H  1
+T2CON. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C8H  1
+com_isr. . . . . . . . . . . . . . . .  STATIC   CODE   PROC     0000H  -----
+  c. . . . . . . . . . . . . . . . . .  * REG *  DATA   CHAR     000FH  1
+_putbuf. . . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  pch. . . . . . . . . . . . . . . . .  AUTO     PDATA  PTR      0000H  3
+  len. . . . . . . . . . . . . . . . .  * REG *  DATA   INT      0006H  2
+PSW. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D0H  1
+_strlen. . . . . . . . . . . . . . . .  EXTERN   CODE   PROC     -----  -----
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    413    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   1624    ----
+   PDATA SIZE       =      8      10
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
